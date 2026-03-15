@@ -1,12 +1,12 @@
 import type { Test } from '@lvce-editor/test-with-playwright'
 
-export const name = 'chat-network-worker.filter-events'
+export const name = 'chat-storage-worker.filter-events'
 
 export const skip = 1
 
 export const test: Test = async ({ Command, expect, Locator }) => {
   // arrange
-  await Command.execute('Main.openUri', 'chat-network://e2e-session-filter')
+  await Command.execute('Main.openUri', 'chat-storage://e2e-session-filter')
   await expect(Locator('.chatStorage')).toBeVisible()
 
   const events = [

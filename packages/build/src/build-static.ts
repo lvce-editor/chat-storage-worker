@@ -9,7 +9,7 @@ const sharedProcessUrl = pathToFileURL(sharedProcessPath).toString()
 
 const sharedProcess = await import(sharedProcessUrl)
 
-process.env.PATH_PREFIX = '/chat-network-worker'
+process.env.PATH_PREFIX = '/chat-storage-worker'
 const { commitHash } = await sharedProcess.exportStatic({
   root,
   extensionPath: '',
@@ -24,7 +24,7 @@ export const getRemoteUrl = (path: string): string => {
 }
 
 const content = await readFile(rendererWorkerPath, 'utf8')
-const chatStorageWorkerPath = join(root, '.tmp/dist-chat-network-worker/dist/chatStorageWorkerMain.js')
+const chatStorageWorkerPath = join(root, '.tmp/dist-chat-storage-worker/dist/chatStorageWorkerMain.js')
 
 const replaceRemoteUrlWithAssetUrl = (
   currentContent: string,
@@ -48,7 +48,7 @@ let newContent = content
 newContent = replaceRemoteUrlWithAssetUrl(
   newContent,
   'chatStorageWorkerUrl',
-  'chat-network-worker',
+  'chat-storage-worker',
   'chatStorageWorkerMain.js',
   chatStorageWorkerPath,
 )

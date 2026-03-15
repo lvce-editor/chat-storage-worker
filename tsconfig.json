@@ -3,7 +3,7 @@
   "include": [],
   "references": [
     {
-      "path": "./packages/chat-network-worker"
+      "path": "./packages/chat-storage-worker"
     },
     {
       "path": "./packages/build"
