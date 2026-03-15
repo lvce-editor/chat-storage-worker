@@ -24,7 +24,7 @@ export const getRemoteUrl = (path: string): string => {
 }
 
 const content = await readFile(rendererWorkerPath, 'utf8')
-const chatNetworkWorkerPath = join(root, '.tmp/dist-chat-network-worker/dist/chatNetworkWorkerMain.js')
+const chatStorageWorkerPath = join(root, '.tmp/dist-chat-network-worker/dist/chatStorageWorkerMain.js')
 
 const replaceRemoteUrlWithAssetUrl = (
   currentContent: string,
@@ -47,10 +47,10 @@ const ${variableName} = \`${remoteUrl}\``
 let newContent = content
 newContent = replaceRemoteUrlWithAssetUrl(
   newContent,
-  'chatNetworkWorkerUrl',
+  'chatStorageWorkerUrl',
   'chat-network-worker',
-  'chatNetworkWorkerMain.js',
-  chatNetworkWorkerPath,
+  'chatStorageWorkerMain.js',
+  chatStorageWorkerPath,
 )
 
 if (newContent === content) {
