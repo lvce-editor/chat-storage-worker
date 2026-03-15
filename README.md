@@ -1,3 +1,3 @@
-# Chat Network Worker
+# Chat Storage Worker
 
-WebWorker for the Chat Network functionality in Lvce Editor.
+WebWorker for the Chat Storage functionality in Lvce Editor.
