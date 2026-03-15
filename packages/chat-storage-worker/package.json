@@ -1,0 +1,51 @@
+{
+  "name": "@lvce-editor/chat-storage-worker",
+  "version": "0.0.0-dev",
+  "description": "Chat Storage Worker",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lvce-editor/chat-storage-worker.git"
+  },
+  "license": "MIT",
+  "author": "Lvce Editor",
+  "type": "module",
+  "main": "src/chatStorageWorkerMain.ts",
+  "scripts": {
+    "test": "node --unhandled-rejections=warn --experimental-vm-modules ./node_modules/jest/bin/jest.js --detectOpenHandles --forceExit",
+    "test:watch": "node --unhandled-rejections=warn --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch"
+  },
+  "jest": {
+    "injectGlobals": false,
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "testMatch": [
+      "**/test/**"
+    ],
+    "collectCoverage": true,
+    "coverageThreshold": {
+      "global": {
+        "branches": 30,
+        "functions": 30,
+        "lines": 30
+      }
+    }
+  },
+  "devDependencies": {
+    "@jest/globals": "^30.3.0",
+    "@lvce-editor/rpc": "^6.4.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.6"
+  }
+}
