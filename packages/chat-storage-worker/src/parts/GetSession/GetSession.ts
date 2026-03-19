@@ -1,20 +1,19 @@
-import type { ChatSession } from '../../ChatSession/ChatSession.ts'
+import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { GetDatabasePromise, SetDatabasePromise } from '../GetDatabase/GetDatabase.ts'
 import { getDatabase } from '../GetDatabase/GetDatabase.ts'
-import { transactionToPromise } from '../TransactionToPromise/TransactionToPromise.ts'
+import { requestToPromise } from '../RequestToPromise/RequestToPromise.ts'
 
-export const setSession = async (
+export const getSession = async (
   getDatabasePromise: GetDatabasePromise,
   setDatabasePromise: SetDatabasePromise,
   databaseName: string,
   databaseVersion: number,
   storeName: string,
-  session: ChatSession,
-): Promise<void> => {
+  id: string,
+): Promise<ChatSession | undefined> => {
   const database = await getDatabase(getDatabasePromise, setDatabasePromise, databaseName, databaseVersion, storeName)
-  const transaction = database.transaction(storeName, 'readwrite')
-  const createTransaction = (): IDBTransaction => transaction
+  const transaction = database.transaction(storeName, 'readonly')
   const store = transaction.objectStore(storeName)
-  store.put(session)
-  await transactionToPromise(createTransaction)
+  const result = await requestToPromise(() => store.get(id))
+  return result
 }
