@@ -1,8 +1,8 @@
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatSessionStorage } from '../ChatSessionStorage/ChatSessionStorage.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
-import { requestToPromise } from './RequestToPromise/RequestToPromise.ts'
-import { transactionToPromise } from './TransactionToPromise/TransactionToPromise.ts'
+import { requestToPromise } from '../RequestToPromise/RequestToPromise.ts'
+import { transactionToPromise } from '../TransactionToPromise/TransactionToPromise.ts'
 
 interface State {
   readonly databaseName: string
