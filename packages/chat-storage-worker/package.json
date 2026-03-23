@@ -16,6 +16,9 @@
   },
   "jest": {
     "injectGlobals": false,
+    "setupFiles": [
+      "fake-indexeddb/auto"
+    ],
     "extensionsToTreatAsEsm": [
       ".ts"
     ],
@@ -45,6 +48,7 @@
   "devDependencies": {
     "@jest/globals": "^30.3.0",
     "@lvce-editor/rpc": "^6.4.0",
+    "fake-indexeddb": "^6.2.5",
     "idb": "^8.0.3",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.6"
