@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/prefer-readonly-parameter-types */
+import type { IDBPDatabase } from 'idb'
+import { openDB } from 'idb'
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatSessionStorage } from '../ChatSessionStorage/ChatSessionStorage.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
-import { requestToPromise } from '../RequestToPromise/RequestToPromise.ts'
-import { transactionToPromise } from '../TransactionToPromise/TransactionToPromise.ts'
 
 interface State {
   readonly databaseName: string
-  databasePromise: Promise<IDBDatabase> | undefined
+  databasePromise: Promise<IDBPDatabase> | undefined
   readonly databaseVersion: number
   readonly eventStoreName: string
   readonly storeName: string
@@ -221,70 +222,56 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
     }
   }
 
-  private openDatabase = async (): Promise<IDBDatabase> => {
+  private openDatabase = async (): Promise<IDBPDatabase> => {
     if (this.state.databasePromise) {
       return this.state.databasePromise
     }
-    const request = indexedDB.open(this.state.databaseName, this.state.databaseVersion)
-    request.addEventListener('upgradeneeded', () => {
-      const database = request.result
-      if (!database.objectStoreNames.contains(this.state.storeName)) {
-        database.createObjectStore(this.state.storeName, {
-          keyPath: 'id',
-        })
-      }
-      if (database.objectStoreNames.contains(this.state.eventStoreName)) {
-        const { transaction } = request
-        if (!transaction) {
-          return
+    const databasePromise = openDB(this.state.databaseName, this.state.databaseVersion, {
+      upgrade: (database, _oldVersion, _newVersion, transaction) => {
+        if (!database.objectStoreNames.contains(this.state.storeName)) {
+          database.createObjectStore(this.state.storeName, {
+            keyPath: 'id',
+          })
         }
-        const eventStore = transaction.objectStore(this.state.eventStoreName)
-        if (!eventStore.indexNames.contains('sessionId')) {
+        if (database.objectStoreNames.contains(this.state.eventStoreName)) {
+          const eventStore = transaction.objectStore(this.state.eventStoreName)
+          if (!eventStore.indexNames.contains('sessionId')) {
+            eventStore.createIndex('sessionId', 'sessionId', { unique: false })
+          }
+        } else {
+          const eventStore = database.createObjectStore(this.state.eventStoreName, {
+            autoIncrement: true,
+            keyPath: 'eventId',
+          })
           eventStore.createIndex('sessionId', 'sessionId', { unique: false })
         }
-      } else {
-        const eventStore = database.createObjectStore(this.state.eventStoreName, {
-          autoIncrement: true,
-          keyPath: 'eventId',
-        })
-        eventStore.createIndex('sessionId', 'sessionId', { unique: false })
-      }
+      },
     })
-    const databasePromise = requestToPromise(() => request)
     this.state.databasePromise = databasePromise
     return databasePromise
   }
 
   private listSummaries = async (): Promise<readonly SessionSummary[]> => {
     const database = await this.openDatabase()
-    const transaction = database.transaction(this.state.storeName, 'readonly')
-    const store = transaction.objectStore(this.state.storeName)
-    const summaries = await requestToPromise(() => store.getAll())
+    const summaries = await database.getAll(this.state.storeName)
     return summaries as readonly SessionSummary[]
   }
 
   private getSummary = async (id: string): Promise<SessionSummary | undefined> => {
     const database = await this.openDatabase()
-    const transaction = database.transaction(this.state.storeName, 'readonly')
-    const store = transaction.objectStore(this.state.storeName)
-    const summary = await requestToPromise(() => store.get(id))
+    const summary = await database.get(this.state.storeName, id)
     return summary as SessionSummary | undefined
   }
 
   private getEventsBySessionId = async (sessionId: string): Promise<readonly ChatViewEvent[]> => {
     const database = await this.openDatabase()
-    const transaction = database.transaction(this.state.eventStoreName, 'readonly')
-    const store = transaction.objectStore(this.state.eventStoreName)
-    const index = store.index('sessionId')
-    const events = await requestToPromise(() => index.getAll(IDBKeyRange.only(sessionId)))
+    const events = await database.getAllFromIndex(this.state.eventStoreName, 'sessionId', IDBKeyRange.only(sessionId))
     return (events as readonly StoredChatViewEvent[]).map(toChatViewEvent)
   }
 
   private listEventsInternal = async (): Promise<readonly ChatViewEvent[]> => {
     const database = await this.openDatabase()
-    const transaction = database.transaction(this.state.eventStoreName, 'readonly')
-    const store = transaction.objectStore(this.state.eventStoreName)
-    const events = await requestToPromise(() => store.getAll())
+    const events = await database.getAll(this.state.eventStoreName)
     return (events as readonly StoredChatViewEvent[]).map(toChatViewEvent)
   }
 
@@ -297,18 +284,18 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
     const summaryStore = transaction.objectStore(this.state.storeName)
     const eventStore = transaction.objectStore(this.state.eventStoreName)
     for (const event of events) {
-      eventStore.add(event)
+      await eventStore.add(event)
       if (event.type === 'chat-session-created' || event.type === 'chat-session-title-updated') {
-        summaryStore.put({
+        await summaryStore.put({
           id: event.sessionId,
           title: event.title,
         })
       }
       if (event.type === 'chat-session-deleted') {
-        summaryStore.delete(event.sessionId)
+        await summaryStore.delete(event.sessionId)
       }
     }
-    await transactionToPromise(() => transaction)
+    await transaction.done
   }
 
   async appendEvent(event: ChatViewEvent): Promise<void> {
@@ -318,9 +305,8 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
   async clear(): Promise<void> {
     const database = await this.openDatabase()
     const transaction = database.transaction([this.state.storeName, this.state.eventStoreName], 'readwrite')
-    transaction.objectStore(this.state.storeName).clear()
-    transaction.objectStore(this.state.eventStoreName).clear()
-    await transactionToPromise(() => transaction)
+    await Promise.all([transaction.objectStore(this.state.storeName).clear(), transaction.objectStore(this.state.eventStoreName).clear()])
+    await transaction.done
   }
 
   async deleteSession(id: string): Promise<void> {
@@ -365,11 +351,11 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
       const database = await this.openDatabase()
       const transaction = database.transaction(this.state.storeName, 'readwrite')
       const summaryStore = transaction.objectStore(this.state.storeName)
-      summaryStore.put({
+      await summaryStore.put({
         id: session.id,
         title: session.title,
       })
-      await transactionToPromise(() => transaction)
+      await transaction.done
     }
   }
 }
