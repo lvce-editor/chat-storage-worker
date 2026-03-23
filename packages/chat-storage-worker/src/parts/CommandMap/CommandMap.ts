@@ -5,7 +5,7 @@ import {
   getChatSession,
   getChatViewEvents,
   listChatSessions,
-  setChatSessionStorage,
+  setSession,
 } from '../ChatSessionStorage/ChatSessionStorage.ts'
 import { handleMessagePort } from '../HandleMessagePort/HandleMessagePort.ts'
 
@@ -16,6 +16,6 @@ export const commandMap = {
   'ChatStorage.getEvents': getChatViewEvents,
   'ChatStorage.getSession': getChatSession,
   'ChatStorage.listSessions': listChatSessions,
-  'ChatStorage.setSession': setChatSessionStorage,
+  'ChatStorage.setSession': setSession,
   'HandleMessagePort.handleMessagePort': handleMessagePort,
 }
