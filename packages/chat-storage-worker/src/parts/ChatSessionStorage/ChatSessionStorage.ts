@@ -26,8 +26,8 @@ export const setChatSessionStorage = (storage: Readonly<ChatSessionStorage>): vo
   chatSessionStorage = storage
 }
 
-export const setSession = (): void => {
-  // TODO this is needed?
+export const setSession = async (session: ChatSession): Promise<void> => {
+  await chatSessionStorage.setSession(session)
 }
 
 export const resetChatSessionStorage = (): void => {
