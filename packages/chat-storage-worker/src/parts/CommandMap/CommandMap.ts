@@ -21,4 +21,5 @@ export const commandMap = {
   'ChatStorage.setTodosInCacheStorage': setTodosInCacheStorage,
   'ChatStorage.setTodosInIndexedDb': setTodosInIndexedDb,
   'HandleMessagePort.handleMessagePort': handleMessagePort,
+  initialize: (_: string, port: MessagePort): Promise<void> => handleMessagePort(port),
 }
