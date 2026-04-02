@@ -1,5 +1,7 @@
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
+import type { ListChatViewEventsResult } from '../ListChatViewEventsResult/ListChatViewEventsResult.ts'
+import { listChatViewEventSummaries, loadSelectedChatViewEvent, type ChatViewEventInfo } from '../ChatViewEventLookup/ChatViewEventLookup.ts'
 import { IndexedDbChatSessionStorage } from '../IndexedDbChatSessionStorage/IndexedDbChatSessionStorage.ts'
 import { InMemoryChatSessionStorage } from '../InMemoryChatSessionStorage/InMemoryChatSessionStorage.ts'
 
@@ -101,4 +103,24 @@ export const appendChatViewEvent = async (event: ChatViewEvent): Promise<void> =
 
 export const getChatViewEvents = async (sessionId?: string): Promise<readonly ChatViewEvent[]> => {
   return chatSessionStorage.getEvents(sessionId)
+}
+
+export const listChatViewEvents = async (sessionId: string): Promise<ListChatViewEventsResult> => {
+  try {
+    const events = await chatSessionStorage.getEvents(sessionId)
+    return {
+      events: listChatViewEventSummaries(events),
+      type: 'success',
+    }
+  } catch (error) {
+    return {
+      error,
+      type: 'error',
+    }
+  }
+}
+
+export const loadSelectedEvent = async (sessionId: string, eventId: number, type: string): Promise<ChatViewEventInfo | null> => {
+  const events = await chatSessionStorage.getEvents(sessionId)
+  return loadSelectedChatViewEvent(events, eventId, type)
 }
