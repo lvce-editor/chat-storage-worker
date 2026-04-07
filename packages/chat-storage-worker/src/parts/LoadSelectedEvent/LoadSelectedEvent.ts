@@ -5,8 +5,8 @@ import * as OpenDatabase from '../OpenDatabase/OpenDatabase.ts'
 export interface LoadSelectedEventOptions {
   readonly databaseName: string
   readonly databaseVersion: number
-  readonly eventStoreName: string
   readonly eventId: number
+  readonly eventStoreName: string
   readonly sessionId: string
   readonly sessionIdIndexName: string
   readonly type: string
@@ -20,8 +20,8 @@ export const loadSelectedEventDependencies = {
 export const loadSelectedEvent = async ({
   databaseName,
   databaseVersion,
-  eventStoreName,
   eventId,
+  eventStoreName,
   sessionId,
   sessionIdIndexName,
   type,

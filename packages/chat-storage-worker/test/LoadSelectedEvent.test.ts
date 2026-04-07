@@ -20,8 +20,7 @@ const createDatabase = (containsEventStore: boolean) => {
 
 test('loadSelectedEvent reads event details from the configured database using an options object', async () => {
   const originalOpenDatabase = LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
-  const originalGetEventDetailsBySessionIdAndEventId =
-    LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
+  const originalGetEventDetailsBySessionIdAndEventId = LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
   const database = createDatabase(true)
   const event: ChatViewEventSimple = {
     eventId: 1,
@@ -60,8 +59,7 @@ test('loadSelectedEvent reads event details from the configured database using a
 
 test('loadSelectedEvent returns null when the configured event store does not exist', async () => {
   const originalOpenDatabase = LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
-  const originalGetEventDetailsBySessionIdAndEventId =
-    LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
+  const originalGetEventDetailsBySessionIdAndEventId = LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
   const database = createDatabase(false)
   LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = jest.fn().mockResolvedValue(database)
   LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = jest.fn()

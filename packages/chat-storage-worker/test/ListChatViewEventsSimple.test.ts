@@ -24,10 +24,10 @@ const createDatabase = (containsEventStore: boolean): Database & { readonly stor
     objectStoreNames: {
       contains: jest.fn().mockReturnValue(containsEventStore),
     } as unknown as Database['objectStoreNames'],
+    store,
     transaction: jest.fn().mockReturnValue({
       objectStore: jest.fn().mockReturnValue(store),
     }),
-    store,
   } as unknown as Database & { readonly store: Store }
 }
 
@@ -38,11 +38,11 @@ test('listChatViewEventsSimple reads from the configured database using an optio
   const events: readonly ChatViewEventSimple[] = [
     {
       eventId: 1,
-      sessionId: 'session-1',
-      type: 'chat-message-user',
-      text: 'hello',
       id: 'message-1',
+      sessionId: 'session-1',
+      text: 'hello',
       time: '2026-01-01T00:00:00.000Z',
+      type: 'chat-message-user',
     },
   ]
   const openDatabaseMock = jest.fn(async () => database)
@@ -52,10 +52,10 @@ test('listChatViewEventsSimple reads from the configured database using an optio
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
-      sessionId: 'session-1',
       databaseName: 'chat-storage-worker',
       databaseVersion: 3,
       eventStoreName: 'events',
+      sessionId: 'session-1',
       sessionIdIndexName: 'sessionId',
     })
 
@@ -85,10 +85,10 @@ test('listChatViewEventsSimple returns an empty result when sessionId is missing
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
-      sessionId: '',
       databaseName: 'chat-storage-worker',
       databaseVersion: 3,
       eventStoreName: 'events',
+      sessionId: '',
       sessionIdIndexName: 'sessionId',
     })
 
