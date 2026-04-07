@@ -1,8 +1,8 @@
-import type { ChatViewEventSummary } from '../ChatViewEventLookup/ChatViewEventLookup.ts'
+import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 
 export type ListChatViewEventsSuccess = {
   readonly type: 'success'
-  readonly events: readonly ChatViewEventSummary[]
+  readonly events: readonly ChatViewEvent[]
 }
 
 export type ListChatViewEventsError = {
@@ -10,4 +10,8 @@ export type ListChatViewEventsError = {
   readonly error: unknown
 }
 
-export type ListChatViewEventsResult = ListChatViewEventsSuccess | ListChatViewEventsError
+export type ListChatViewEventsNotSupported = {
+  readonly type: 'not-supported'
+}
+
+export type ListChatViewEventsResult = ListChatViewEventsSuccess | ListChatViewEventsError | ListChatViewEventsNotSupported
