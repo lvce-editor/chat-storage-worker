@@ -17,16 +17,14 @@ export const listChatViewEventsDependencies = {
   openDatabase: OpenDatabase.openDatabase,
 }
 
-export const listChatViewEventsSimple = async (
-  {
-    databaseName,
-    databaseVersion,
-    eventStoreName,
-    indexedDbSupportOverride,
-    sessionId,
-    sessionIdIndexName,
-  }: ListChatViewEventsSimpleOptions,
-): Promise<ListChatViewEventsResult> => {
+export const listChatViewEventsSimple = async ({
+  databaseName,
+  databaseVersion,
+  eventStoreName,
+  indexedDbSupportOverride,
+  sessionId,
+  sessionIdIndexName,
+}: ListChatViewEventsSimpleOptions): Promise<ListChatViewEventsResult> => {
   if (!isIndexedDbSupported(indexedDbSupportOverride)) {
     return {
       type: 'not-supported',
