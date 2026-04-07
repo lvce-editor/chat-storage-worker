@@ -120,7 +120,7 @@ export const listChatViewEvents = async (sessionId: string): Promise<ListChatVie
   }
 }
 
-export const loadSelectedEvent = async (sessionId: string, eventId: number, type: string): Promise<ChatViewEventInfo | null> => {
+export const loadSelectedEventOld = async (sessionId: string, eventId: number, type: string): Promise<ChatViewEventInfo | null> => {
   const events = await chatSessionStorage.getEvents(sessionId)
   return loadSelectedChatViewEvent(events, eventId, type)
 }
