@@ -154,7 +154,7 @@ test('loadSelectedEvent merges matching tool execution pair', async () => {
     }),
   )
 
-  const result = await chatSessionStorage.loadSelectedEvent('session-1', 1, 'tool-execution')
+  const result = await chatSessionStorage.loadSelectedEventOld('session-1', 1, 'tool-execution')
   expect(result).toEqual({
     ended: 150,
     eventId: 1,
