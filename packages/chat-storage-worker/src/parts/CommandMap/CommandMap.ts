@@ -4,14 +4,15 @@ import {
   deleteChatSession,
   getChatSession,
   getChatViewEvents,
-  loadSelectedEventOld,
   listChatSessions,
   listChatViewEvents,
+  loadSelectedEventOld,
   setSession,
 } from '../ChatSessionStorage/ChatSessionStorage.ts'
 import { handleMessagePort } from '../HandleMessagePort/HandleMessagePort.ts'
+import { listChatViewEventsSimple } from '../ListChatViewEventsSimple/ListChatViewEventsSimple.ts'
 import { loadSelectedEvent } from '../LoadSelectedEvent/LoadSelectedEvent.ts'
-import { setTodosInIndexedDb, setTodosInCacheStorage } from '../TodoStorage/TodoStorage.ts'
+import { setTodosInCacheStorage, setTodosInIndexedDb } from '../TodoStorage/TodoStorage.ts'
 
 export const commandMap = {
   'ChatStorage.appendEvent': appendChatViewEvent,
@@ -20,6 +21,7 @@ export const commandMap = {
   'ChatStorage.getEvents': getChatViewEvents,
   'ChatStorage.getSession': getChatSession,
   'ChatStorage.listChatViewEvents': listChatViewEvents,
+  'ChatStorage.listChatViewEventsSimple': listChatViewEventsSimple,
   'ChatStorage.listSessions': listChatSessions,
   'ChatStorage.loadSelectedEvent': loadSelectedEventOld,
   'ChatStorage.loadSelectedEventNew': loadSelectedEvent,
