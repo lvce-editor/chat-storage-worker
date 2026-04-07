@@ -1,17 +1,34 @@
-import { expect, test } from '@jest/globals'
+import { expect, jest, test } from '@jest/globals'
 import type { ChatViewEventSimple } from '../src/parts/ChatViewEventSimple/ChatViewEventSimple.ts'
 import * as ListChatViewEventsSimple from '../src/parts/ListChatViewEventsSimple/ListChatViewEventsSimple.ts'
 
-const createDatabase = (containsEventStore: boolean) => {
+type OpenDatabase = typeof ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
+type Database = Awaited<ReturnType<OpenDatabase>>
+type GetEventsBySessionId = typeof ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
+type Store = Parameters<GetEventsBySessionId>[0]
+
+const createStore = (): Store => {
+  return {
+    getAll: jest.fn(),
+    index: jest.fn(),
+    indexNames: {
+      contains: jest.fn(),
+    } as unknown as Store['indexNames'],
+  } as unknown as Store
+}
+
+const createDatabase = (containsEventStore: boolean): Database & { readonly store: Store } => {
+  const store = createStore()
   return {
     close: jest.fn(),
     objectStoreNames: {
       contains: jest.fn().mockReturnValue(containsEventStore),
-    },
+    } as unknown as Database['objectStoreNames'],
     transaction: jest.fn().mockReturnValue({
-      objectStore: jest.fn().mockReturnValue({}),
+      objectStore: jest.fn().mockReturnValue(store),
     }),
-  }
+    store,
+  } as unknown as Database & { readonly store: Store }
 }
 
 test('listChatViewEventsSimple reads from the configured database using an options object', async () => {
@@ -28,8 +45,10 @@ test('listChatViewEventsSimple reads from the configured database using an optio
       time: '2026-01-01T00:00:00.000Z',
     },
   ]
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = jest.fn().mockResolvedValue(database)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = jest.fn().mockResolvedValue(events)
+  const openDatabaseMock = jest.fn(async () => database)
+  const getEventsBySessionIdMock = jest.fn(async () => events)
+  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
@@ -40,8 +59,10 @@ test('listChatViewEventsSimple reads from the configured database using an optio
       sessionIdIndexName: 'sessionId',
     })
 
-    expect(ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase).toHaveBeenCalledWith('chat-storage-worker', 3)
-    expect(ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId).toHaveBeenCalledWith({}, 'session-1', 'sessionId')
+    expect(openDatabaseMock).toHaveBeenCalledWith('chat-storage-worker', 3)
+    expect(getEventsBySessionIdMock.mock.calls[0][0]).toBe(database.store)
+    expect(getEventsBySessionIdMock.mock.calls[0][1]).toBe('session-1')
+    expect(getEventsBySessionIdMock.mock.calls[0][2]).toBe('sessionId')
     expect(result).toEqual({
       events,
       type: 'success',
@@ -57,8 +78,10 @@ test('listChatViewEventsSimple returns an empty result when sessionId is missing
   const originalOpenDatabase = ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
   const originalGetEventsBySessionId = ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
   const database = createDatabase(true)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = jest.fn().mockResolvedValue(database)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = jest.fn()
+  const openDatabaseMock = jest.fn(async () => database)
+  const getEventsBySessionIdMock = jest.fn()
+  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
@@ -73,7 +96,7 @@ test('listChatViewEventsSimple returns an empty result when sessionId is missing
       events: [],
       type: 'success',
     })
-    expect(ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId).not.toHaveBeenCalled()
+    expect(getEventsBySessionIdMock).not.toHaveBeenCalled()
     expect(database.close).toHaveBeenCalledTimes(1)
   } finally {
     ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = originalOpenDatabase

@@ -2,21 +2,31 @@ import type { ChatViewEventSimple } from '../ChatViewEventSimple/ChatViewEventSi
 import * as GetEventDetailsBySessionIdAndEventId from '../GetEventDetailsBySessionIdAndEventId/GetEventDetailsBySessionIdAndEventId.ts'
 import * as OpenDatabase from '../OpenDatabase/OpenDatabase.ts'
 
+export interface LoadSelectedEventOptions {
+  readonly databaseName: string
+  readonly databaseVersion: number
+  readonly eventStoreName: string
+  readonly eventId: number
+  readonly sessionId: string
+  readonly sessionIdIndexName: string
+  readonly type: string
+}
+
 export const loadSelectedEventDependencies = {
   getEventDetailsBySessionIdAndEventId: GetEventDetailsBySessionIdAndEventId.getEventDetailsBySessionIdAndEventId,
   openDatabase: OpenDatabase.openDatabase,
 }
 
-export const loadSelectedEvent = async (
-  databaseName: string,
-  dataBaseVersion: number,
-  eventStoreName: string,
-  sessionId: string,
-  sessionIdIndexName: string,
-  eventId: number,
-  type: string,
-): Promise<ChatViewEventSimple | null> => {
-  const database = await loadSelectedEventDependencies.openDatabase(databaseName, dataBaseVersion)
+export const loadSelectedEvent = async ({
+  databaseName,
+  databaseVersion,
+  eventStoreName,
+  eventId,
+  sessionId,
+  sessionIdIndexName,
+  type,
+}: LoadSelectedEventOptions): Promise<ChatViewEventSimple | null> => {
+  const database = await loadSelectedEventDependencies.openDatabase(databaseName, databaseVersion)
   try {
     if (!database.objectStoreNames.contains(eventStoreName)) {
       return null
