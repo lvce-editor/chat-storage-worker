@@ -45,8 +45,8 @@ test('listChatViewEventsSimple reads from the configured database using an optio
       type: 'chat-message-user',
     },
   ]
-  const openDatabaseMock = jest.fn(async () => database)
-  const getEventsBySessionIdMock = jest.fn(async () => events)
+  const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
+  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>(async () => events)
   ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
   ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
 
@@ -78,8 +78,8 @@ test('listChatViewEventsSimple returns an empty result when sessionId is missing
   const originalOpenDatabase = ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
   const originalGetEventsBySessionId = ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
   const database = createDatabase(true)
-  const openDatabaseMock = jest.fn(async () => database)
-  const getEventsBySessionIdMock = jest.fn()
+  const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
+  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>(async () => [])
   ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
   ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
 
