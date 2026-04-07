@@ -1,8 +1,6 @@
-import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
-
 export type ListChatViewEventsSuccess = {
   readonly type: 'success'
-  readonly events: readonly ChatViewEvent[]
+  readonly events: readonly any[]
 }
 
 export type ListChatViewEventsError = {
