@@ -3,18 +3,29 @@ import * as GetEventsBySessionId from '../GetEventsBySessionId/GetEventsBySessio
 import { isIndexedDbSupported } from '../IsIndexedDbSupported/IsIndexedDbSupported.ts'
 import * as OpenDatabase from '../OpenDatabase/OpenDatabase.ts'
 
+export interface ListChatViewEventsSimpleOptions {
+  readonly databaseName: string
+  readonly databaseVersion: number
+  readonly eventStoreName: string
+  readonly indexedDbSupportOverride?: boolean
+  readonly sessionId: string
+  readonly sessionIdIndexName: string
+}
+
 export const listChatViewEventsDependencies = {
   getEventsBySessionId: GetEventsBySessionId.getSimpleEventsBySessionId,
   openDatabase: OpenDatabase.openDatabase,
 }
 
 export const listChatViewEventsSimple = async (
-  sessionId: string,
-  databaseName: string,
-  dataBaseVersion: number,
-  eventStoreName: string,
-  sessionIdIndexName: string,
-  indexedDbSupportOverride?: boolean,
+  {
+    databaseName,
+    databaseVersion,
+    eventStoreName,
+    indexedDbSupportOverride,
+    sessionId,
+    sessionIdIndexName,
+  }: ListChatViewEventsSimpleOptions,
 ): Promise<ListChatViewEventsResult> => {
   if (!isIndexedDbSupported(indexedDbSupportOverride)) {
     return {
@@ -23,7 +34,7 @@ export const listChatViewEventsSimple = async (
   }
 
   try {
-    const database = await listChatViewEventsDependencies.openDatabase(databaseName, dataBaseVersion)
+    const database = await listChatViewEventsDependencies.openDatabase(databaseName, databaseVersion)
     try {
       if (!database.objectStoreNames.contains(eventStoreName)) {
         return {
