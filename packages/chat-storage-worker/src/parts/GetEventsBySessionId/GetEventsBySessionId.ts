@@ -16,7 +16,7 @@ const toLightweightEvents = (events: readonly ChatViewEventSimple[]): readonly C
   return collapseToolExecutionEvents(eventsWithIds).map((event, index) => getLightweightEvent(event, index + 1))
 }
 
-export const getEventsBySessionId = async (
+export const getSimpleEventsBySessionId = async (
   store: Pick<IDBPObjectStore, 'getAll' | 'indexNames' | 'index'>, // eslint-disable-line @typescript-eslint/prefer-readonly-parameter-types
   sessionId: string,
   sessionIdIndexName: string,
