@@ -167,3 +167,27 @@ test('loadSelectedEvent merges matching tool execution pair', async () => {
     value: 'start',
   })
 })
+
+test('appendChatViewEvent notifies matching update listeners', async () => {
+  jest.resetModules()
+  const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
+  const invoke = jest.fn(async (): Promise<unknown> => undefined)
+
+  chatSessionStorage.setUpdateRpc({
+    invoke,
+  })
+  await chatSessionStorage.registerUpdateListener('session-1', 'handleStorageWorkerUpdate', 7)
+  await chatSessionStorage.registerUpdateListener('session-2', 'handleStorageWorkerUpdate', 8)
+
+  await chatSessionStorage.appendChatViewEvent(
+    createRawEvent({
+      sessionId: 'session-1',
+      timestamp: 25,
+      type: 'handle-input',
+      value: 'hello',
+    }),
+  )
+
+  expect(invoke).toHaveBeenCalledTimes(1)
+  expect(invoke.mock.calls).toEqual([['handleStorageWorkerUpdate', 7]])
+})

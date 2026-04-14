@@ -15,6 +15,16 @@ export interface ChatSessionStorage {
   setSession(session: ChatSession): Promise<void>
 }
 
+interface UpdateListener {
+  readonly rpcId: string
+  readonly sessionId: string
+  readonly uid: number
+}
+
+interface UpdateRpc {
+  readonly invoke: (method: string, ...params: readonly unknown[]) => Promise<unknown>
+}
+
 const createDefaultStorage = (): Readonly<ChatSessionStorage> => {
   if (typeof indexedDB === 'undefined') {
     return new InMemoryChatSessionStorage()
@@ -23,6 +33,8 @@ const createDefaultStorage = (): Readonly<ChatSessionStorage> => {
 }
 
 let chatSessionStorage: Readonly<ChatSessionStorage> = createDefaultStorage()
+const updateListeners = new Map<string, UpdateListener>()
+let updateRpc: UpdateRpc | undefined
 
 export const setChatSessionStorage = (storage: Readonly<ChatSessionStorage>): void => {
   chatSessionStorage = storage
@@ -34,6 +46,32 @@ export const setSession = async (session: ChatSession): Promise<void> => {
 
 export const resetChatSessionStorage = (): void => {
   chatSessionStorage = new InMemoryChatSessionStorage()
+  updateListeners.clear()
+  updateRpc = undefined
+}
+
+export const setUpdateRpc = (rpc: UpdateRpc): void => {
+  updateRpc = rpc
+}
+
+export const registerUpdateListener = async (sessionId: string, rpcId: string, uid: number): Promise<void> => {
+  updateListeners.set(`${rpcId}:${uid}`, {
+    rpcId,
+    sessionId,
+    uid,
+  })
+}
+
+const notifyUpdateListeners = async (sessionId: string): Promise<void> => {
+  if (!updateRpc) {
+    return
+  }
+  for (const listener of updateListeners.values()) {
+    if (listener.sessionId !== sessionId) {
+      continue
+    }
+    await updateRpc.invoke(listener.rpcId, listener.uid)
+  }
 }
 
 export const listChatSessions = async (): Promise<readonly ChatSession[]> => {
@@ -99,6 +137,7 @@ export const clearChatSessions = async (): Promise<void> => {
 
 export const appendChatViewEvent = async (event: ChatViewEvent): Promise<void> => {
   await chatSessionStorage.appendEvent(event)
+  await notifyUpdateListeners(event.sessionId)
 }
 
 export const getChatViewEvents = async (sessionId?: string): Promise<readonly ChatViewEvent[]> => {
