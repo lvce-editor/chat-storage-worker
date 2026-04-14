@@ -10,4 +10,5 @@ test('commandMap exposes chat view event commands', async () => {
   const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
   expect(CommandMap.commandMap['ChatStorage.listChatViewEvents']).toBe(chatSessionStorage.listChatViewEvents)
   expect(CommandMap.commandMap['ChatStorage.loadSelectedEvent']).toBe(chatSessionStorage.loadSelectedEventOld)
+  expect(CommandMap.commandMap['ChatStorage.registerUpdateListener']).toBe(chatSessionStorage.registerUpdateListener)
 })
