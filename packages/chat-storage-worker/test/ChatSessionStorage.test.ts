@@ -28,7 +28,7 @@ beforeEach(async () => {
   chatSessionStorage.resetChatSessionStorage()
 })
 
-const createMockRpc = () => {
+const createMockRpc = (): any => {
   const invocations: Array<readonly [string, number, string]> = []
   return {
     dispose: jest.fn(async () => {}),
