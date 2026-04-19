@@ -1,3 +1,4 @@
+import * as RpcRegistry from '@lvce-editor/rpc-registry'
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 import type { ListChatViewEventsResult } from '../ListChatViewEventsResult/ListChatViewEventsResult.ts'
@@ -11,10 +12,16 @@ export interface ChatSessionUpdateEvent {
   readonly type: 'session-deleted' | 'session-updated' | 'storage-cleared'
 }
 
-interface SessionListener {
-  readonly queue: ChatSessionUpdateEvent[]
+export interface SessionListener {
+  readonly rpcId: number
   readonly sessionId: string
-  readonly waiters: Array<() => void>
+  readonly type: 'session'
+  readonly uid: number
+}
+
+export interface SessionListenerIdentifier {
+  readonly rpcId: number
+  readonly uid: number
 }
 
 export interface ChatSessionStorage {
@@ -36,58 +43,31 @@ const createDefaultStorage = (): Readonly<ChatSessionStorage> => {
 
 let chatSessionStorage: Readonly<ChatSessionStorage> = createDefaultStorage()
 const sessionListeners = new Map<string, SessionListener>()
-const sessionRevisions = new Map<string, number>()
 
-const createSessionListener = (sessionId: string): SessionListener => {
-  return {
-    queue: [],
-    sessionId,
-    waiters: [],
+const getSessionListenerKey = ({ rpcId, uid }: SessionListenerIdentifier): string => {
+  return `${rpcId}:${uid}`
+}
+
+const notifySessionListener = (listener: SessionListener): void => {
+  const rpc = RpcRegistry.get(listener.rpcId)
+  if (!rpc) {
+    return
   }
+  rpc.send('handleChatStorageUpdate', listener.uid, listener.sessionId)
 }
 
-const getSessionListener = (subscriberId: string): SessionListener | undefined => {
-  return sessionListeners.get(subscriberId)
-}
-
-const getNextRevision = (sessionId: string): number => {
-  const nextRevision = (sessionRevisions.get(sessionId) || 0) + 1
-  sessionRevisions.set(sessionId, nextRevision)
-  return nextRevision
-}
-
-const notifySessionListeners = (sessionId: string, type: ChatSessionUpdateEvent['type']): void => {
-  const revision = getNextRevision(sessionId)
+const notifySessionListeners = (sessionId: string): void => {
   for (const listener of sessionListeners.values()) {
     if (listener.sessionId !== sessionId) {
       continue
     }
-    listener.queue.push({
-      revision,
-      sessionId,
-      type,
-    })
-    const waiters = [...listener.waiters]
-    listener.waiters.length = 0
-    for (const waiter of waiters) {
-      waiter()
-    }
+    notifySessionListener(listener)
   }
 }
 
-const notifyAllSessionListeners = (type: ChatSessionUpdateEvent['type']): void => {
+const notifyAllSessionListeners = (): void => {
   for (const listener of sessionListeners.values()) {
-    const revision = getNextRevision(listener.sessionId)
-    listener.queue.push({
-      revision,
-      sessionId: listener.sessionId,
-      type,
-    })
-    const waiters = [...listener.waiters]
-    listener.waiters.length = 0
-    for (const waiter of waiters) {
-      waiter()
-    }
+    notifySessionListener(listener)
   }
 }
 
@@ -97,13 +77,12 @@ export const setChatSessionStorage = (storage: Readonly<ChatSessionStorage>): vo
 
 export const setSession = async (session: ChatSession): Promise<void> => {
   await chatSessionStorage.setSession(session)
-  notifySessionListeners(session.id, 'session-updated')
+  notifySessionListeners(session.id)
 }
 
 export const resetChatSessionStorage = (): void => {
   chatSessionStorage = new InMemoryChatSessionStorage()
   sessionListeners.clear()
-  sessionRevisions.clear()
 }
 
 export const listChatSessions = async (): Promise<readonly ChatSession[]> => {
@@ -161,75 +140,37 @@ export const saveChatSession = async (session: ChatSession): Promise<void> => {
 
 export const deleteChatSession = async (id: string): Promise<void> => {
   await chatSessionStorage.deleteSession(id)
-  notifySessionListeners(id, 'session-deleted')
+  notifySessionListeners(id)
 }
 
 export const clearChatSessions = async (): Promise<void> => {
   await chatSessionStorage.clear()
-  notifyAllSessionListeners('storage-cleared')
+  notifyAllSessionListeners()
 }
 
 export const appendChatViewEvent = async (event: ChatViewEvent): Promise<void> => {
   await chatSessionStorage.appendEvent(event)
-  notifySessionListeners(event.sessionId, 'session-updated')
+  notifySessionListeners(event.sessionId)
 }
 
 export const getChatViewEvents = async (sessionId?: string): Promise<readonly ChatViewEvent[]> => {
   return chatSessionStorage.getEvents(sessionId)
 }
 
-export const subscribeSessionUpdates = (sessionId: string, subscriberId: string): void => {
-  const existingListener = getSessionListener(subscriberId)
-  if (existingListener) {
-    const waiters = [...existingListener.waiters]
-    existingListener.waiters.length = 0
-    for (const waiter of waiters) {
-      waiter()
-    }
-  }
-  sessionListeners.set(subscriberId, createSessionListener(sessionId))
+export const subscribeSessionUpdates = (listener: SessionListener): void => {
+  sessionListeners.set(getSessionListenerKey(listener), listener)
 }
 
-export const unsubscribeSessionUpdates = (subscriberId: string): void => {
-  const listener = getSessionListener(subscriberId)
-  if (!listener) {
-    return
-  }
-  const waiters = [...listener.waiters]
-  listener.waiters.length = 0
-  sessionListeners.delete(subscriberId)
-  for (const waiter of waiters) {
-    waiter()
-  }
+export const unsubscribeSessionUpdates = (listener: SessionListenerIdentifier): void => {
+  sessionListeners.delete(getSessionListenerKey(listener))
 }
 
-export const consumeSessionUpdates = (subscriberId: string): readonly ChatSessionUpdateEvent[] => {
-  const listener = getSessionListener(subscriberId)
-  if (!listener) {
-    return []
-  }
-  const events = [...listener.queue]
-  listener.queue.length = 0
-  return events
+export const consumeSessionUpdates = (): readonly ChatSessionUpdateEvent[] => {
+  return []
 }
 
-export const waitForSessionUpdates = async (subscriberId: string, timeout: number = 1000): Promise<readonly ChatSessionUpdateEvent[]> => {
-  const listener = getSessionListener(subscriberId)
-  if (!listener) {
-    return []
-  }
-  if (listener.queue.length > 0) {
-    return consumeSessionUpdates(subscriberId)
-  }
-  await new Promise<void>((resolve) => {
-    function finish(): void {
-      clearTimeout(timeoutId)
-      resolve()
-    }
-    const timeoutId = setTimeout(finish, timeout)
-    listener.waiters.push(finish)
-  })
-  return consumeSessionUpdates(subscriberId)
+export const waitForSessionUpdates = async (): Promise<readonly ChatSessionUpdateEvent[]> => {
+  return []
 }
 
 export const listChatViewEvents = async (sessionId: string): Promise<ListChatViewEventsResult> => {
