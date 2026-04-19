@@ -31,8 +31,8 @@ beforeEach(async () => {
 const createMockRpc = () => {
   const invocations: Array<readonly [string, number, string]> = []
   return {
-    invocations,
     dispose: jest.fn(async () => {}),
+    invocations,
     invoke: jest.fn(async () => {}),
     invokeAndTransfer: jest.fn(async () => {}),
     send: jest.fn((method: string, uid: number, sessionId: string) => {
