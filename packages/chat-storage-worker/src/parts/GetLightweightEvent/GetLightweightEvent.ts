@@ -7,13 +7,14 @@ import { isTimeValue } from '../IsTimeValue/IsTimeValue.ts'
 export const getLightweightEvent = (event: ChatViewEventSimple, fallbackEventId: number): ChatViewEventSimple => {
   const startTime = getStartTime(event)
   const endTime = getEndTime(event)
-  const { requestId } = event
+  const { requestId, timestamp } = event
   return {
     duration: getDuration(event),
     ...(isTimeValue(endTime) ? { endTime } : {}),
     eventId: typeof event.eventId === 'number' ? event.eventId : fallbackEventId,
     ...(typeof requestId === 'string' ? { requestId } : {}),
     ...(isTimeValue(startTime) ? { startTime } : {}),
+    ...(isTimeValue(timestamp) ? { timestamp } : {}),
     type: event.type,
   }
 }
