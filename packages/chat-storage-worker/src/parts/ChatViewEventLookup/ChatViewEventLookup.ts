@@ -10,6 +10,7 @@ export interface ChatViewEventSummary {
   readonly duration: number
   readonly endTime?: number | string
   readonly eventId: number
+  readonly requestId?: string
   readonly startTime?: number | string
   readonly type: string
 }
@@ -131,10 +132,12 @@ const collapseToolExecutionEvents = (events: readonly RawChatViewEvent[]): reado
 const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): ChatViewEventSummary => {
   const startTime = getStartTime(event)
   const endTime = getEndTime(event)
+  const { requestId } = event
   return {
     duration: getDuration(event),
     ...(endTime === undefined ? {} : { endTime }),
     eventId: typeof event.eventId === 'number' ? event.eventId : fallbackEventId,
+    ...(typeof requestId === 'string' ? { requestId } : {}),
     ...(startTime === undefined ? {} : { startTime }),
     type: event.type,
   }

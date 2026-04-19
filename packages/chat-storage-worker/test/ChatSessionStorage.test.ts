@@ -154,6 +154,7 @@ test('listChatViewEvents returns lightweight events with stable raw event ids', 
   )
   await chatSessionStorage.appendChatViewEvent(
     createRawEvent({
+      requestId: 'request-1',
       sessionId: 'session-1',
       started: 100,
       timestamp: 100,
@@ -193,6 +194,7 @@ test('listChatViewEvents returns lightweight events with stable raw event ids', 
         duration: 50,
         endTime: 150,
         eventId: 2,
+        requestId: 'request-1',
         startTime: 100,
         type: 'tool-execution',
       },
