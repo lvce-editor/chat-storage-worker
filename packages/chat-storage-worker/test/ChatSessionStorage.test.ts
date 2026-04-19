@@ -1,6 +1,14 @@
 import { beforeEach, expect, jest, test } from '@jest/globals'
 import type { ChatSession } from '../src/parts/ChatSession/ChatSession.ts'
 import type { ChatViewEvent } from '../src/parts/ChatViewEvent/ChatViewEvent.ts'
+import {
+  appendChatViewEvent,
+  consumeSessionUpdates,
+  deleteChatSession,
+  saveChatSession,
+  subscribeSessionUpdates,
+  waitForSessionUpdates,
+} from '../src/parts/ChatSessionStorage/ChatSessionStorage.ts'
 
 const createSession = (id: string, title: string): ChatSession => {
   return {
@@ -17,6 +25,77 @@ const createRawEvent = (event: Readonly<Record<string, unknown>>): ChatViewEvent
 beforeEach(async () => {
   const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
   chatSessionStorage.resetChatSessionStorage()
+})
+
+test('subscribeSessionUpdates should buffer notifications for one session only', async () => {
+  subscribeSessionUpdates('session-1', 'listener-1')
+
+  await appendChatViewEvent({
+    sessionId: 'session-2',
+    timestamp: '2026-04-19T00:00:00.000Z',
+    type: 'handle-input',
+    value: 'other session',
+  })
+
+  expect(consumeSessionUpdates('listener-1')).toEqual([])
+
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:01.000Z',
+    type: 'handle-input',
+    value: 'watched session',
+  })
+
+  expect(consumeSessionUpdates('listener-1')).toEqual([
+    {
+      revision: 1,
+      sessionId: 'session-1',
+      type: 'session-updated',
+    },
+  ])
+})
+
+test('waitForSessionUpdates should resolve when subscribed session changes', async () => {
+  subscribeSessionUpdates('session-1', 'listener-2')
+
+  const waitPromise = waitForSessionUpdates('listener-2', 500)
+
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:02.000Z',
+    type: 'handle-input',
+    value: 'trigger update',
+  })
+
+  await expect(waitPromise).resolves.toEqual([
+    {
+      revision: 1,
+      sessionId: 'session-1',
+      type: 'session-updated',
+    },
+  ])
+})
+
+test('deleteChatSession should notify subscribed listeners', async () => {
+  subscribeSessionUpdates('session-1', 'listener-3')
+
+  await saveChatSession(createSession('session-1', 'Session 1'))
+  expect(consumeSessionUpdates('listener-3')).toEqual([
+    {
+      revision: 1,
+      sessionId: 'session-1',
+      type: 'session-updated',
+    },
+  ])
+
+  await deleteChatSession('session-1')
+  expect(consumeSessionUpdates('listener-3')).toEqual([
+    {
+      revision: 2,
+      sessionId: 'session-1',
+      type: 'session-deleted',
+    },
+  ])
 })
 
 test('falls back to in-memory storage if indexedDB is unavailable', async () => {
