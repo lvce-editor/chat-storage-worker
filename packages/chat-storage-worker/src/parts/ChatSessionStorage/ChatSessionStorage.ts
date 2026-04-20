@@ -1,38 +1,16 @@
 import * as RpcRegistry from '@lvce-editor/rpc-registry'
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
+import type {
+  ChatSessionStorage,
+  ChatSessionUpdateEvent,
+  SessionListener,
+  SessionListenerIdentifier,
+} from '../ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 import type { ListChatViewEventsResult } from '../ListChatViewEventsResult/ListChatViewEventsResult.ts'
 import { listChatViewEventSummaries, loadSelectedChatViewEvent, type ChatViewEventInfo } from '../ChatViewEventLookup/ChatViewEventLookup.ts'
 import { IndexedDbChatSessionStorage } from '../IndexedDbChatSessionStorage/IndexedDbChatSessionStorage.ts'
 import { InMemoryChatSessionStorage } from '../InMemoryChatSessionStorage/InMemoryChatSessionStorage.ts'
-
-export interface ChatSessionUpdateEvent {
-  readonly revision: number
-  readonly sessionId: string
-  readonly type: 'session-deleted' | 'session-updated' | 'storage-cleared'
-}
-
-export interface SessionListener {
-  readonly rpcId: number
-  readonly sessionId: string
-  readonly type: 'session'
-  readonly uid: number
-}
-
-export interface SessionListenerIdentifier {
-  readonly rpcId: number
-  readonly uid: number
-}
-
-export interface ChatSessionStorage {
-  appendEvent(event: ChatViewEvent): Promise<void>
-  clear(): Promise<void>
-  deleteSession(id: string): Promise<void>
-  getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]>
-  getSession(id: string): Promise<ChatSession | undefined>
-  listSessions(): Promise<readonly ChatSession[]>
-  setSession(session: ChatSession): Promise<void>
-}
 
 const createDefaultStorage = (): Readonly<ChatSessionStorage> => {
   if (typeof indexedDB === 'undefined') {
