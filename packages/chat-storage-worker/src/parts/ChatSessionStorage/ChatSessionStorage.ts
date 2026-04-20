@@ -9,15 +9,8 @@ import type {
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 import type { ListChatViewEventsResult } from '../ListChatViewEventsResult/ListChatViewEventsResult.ts'
 import { listChatViewEventSummaries, loadSelectedChatViewEvent, type ChatViewEventInfo } from '../ChatViewEventLookup/ChatViewEventLookup.ts'
-import { IndexedDbChatSessionStorage } from '../IndexedDbChatSessionStorage/IndexedDbChatSessionStorage.ts'
+import { createDefaultStorage } from '../CreateDefaultStorage/CreateDefaultStorage.ts'
 import { InMemoryChatSessionStorage } from '../InMemoryChatSessionStorage/InMemoryChatSessionStorage.ts'
-
-const createDefaultStorage = (): Readonly<ChatSessionStorage> => {
-  if (typeof indexedDB === 'undefined') {
-    return new InMemoryChatSessionStorage()
-  }
-  return new IndexedDbChatSessionStorage()
-}
 
 let chatSessionStorage: Readonly<ChatSessionStorage> = createDefaultStorage()
 const sessionListeners = new Map<string, SessionListener>()
@@ -38,7 +31,7 @@ const notifySessionListener = (listener: SessionListener): void => {
   if (!rpc) {
     return
   }
-  rpc.send('handleChatStorageUpdate', listener.uid, listener.sessionId)
+  void rpc.invoke('handleChatStorageUpdate', listener.uid, listener.sessionId)
 }
 
 const notifySessionListeners = (sessionId: string): void => {
