@@ -10,6 +10,10 @@ export class CompositeChatSessionStorage implements ChatSessionStorage {
     private readonly debugEventStorage: Readonly<DebugEventStorage>,
   ) {}
 
+  async appendDebugEvent(event: ChatViewEvent): Promise<void> {
+    await this.debugEventStorage.appendEvent(event)
+  }
+
   async appendEvent(event: ChatViewEvent): Promise<void> {
     if (isRequiredChatViewEvent(event)) {
       await this.sessionStorage.appendEvent(event)

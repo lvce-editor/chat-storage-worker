@@ -1,4 +1,5 @@
 import {
+  appendChatDebugEvent,
   appendChatViewEvent,
   clearChatSessions,
   consumeSessionUpdates,
@@ -19,6 +20,7 @@ import { loadSelectedEvent } from '../LoadSelectedEvent/LoadSelectedEvent.ts'
 import { setTodosInCacheStorage, setTodosInIndexedDb } from '../TodoStorage/TodoStorage.ts'
 
 export const commandMap = {
+  'ChatStorage.appendDebugEvent': appendChatDebugEvent,
   'ChatStorage.appendEvent': appendChatViewEvent,
   'ChatStorage.clear': clearChatSessions,
   'ChatStorage.consumeSessionUpdates': consumeSessionUpdates,

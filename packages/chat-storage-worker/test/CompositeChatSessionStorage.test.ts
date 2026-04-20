@@ -77,3 +77,25 @@ test('appendEvent stores debug chat events in debug storage', async () => {
   })
   expect(sessionStorage.appendEvent).not.toHaveBeenCalled()
 })
+
+test('appendDebugEvent writes directly to debug storage', async () => {
+  const sessionStorage = createSessionStorage()
+  const debugEventStorage = createDebugEventStorage()
+  const storage = new CompositeChatSessionStorage(sessionStorage, debugEventStorage)
+
+  await storage.appendDebugEvent({
+    body: { foo: 'bar' },
+    sessionId: 'session-1',
+    timestamp: '2026-04-20T00:00:00.000Z',
+    type: 'ai-request',
+  })
+
+  expect(debugEventStorage.appendEvent).toHaveBeenCalledTimes(1)
+  expect(debugEventStorage.appendEvent).toHaveBeenCalledWith({
+    body: { foo: 'bar' },
+    sessionId: 'session-1',
+    timestamp: '2026-04-20T00:00:00.000Z',
+    type: 'ai-request',
+  })
+  expect(sessionStorage.appendEvent).not.toHaveBeenCalled()
+})

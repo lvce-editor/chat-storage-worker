@@ -4,6 +4,7 @@ import * as RpcRegistry from '@lvce-editor/rpc-registry'
 import type { ChatSession } from '../src/parts/ChatSession/ChatSession.ts'
 import type { ChatViewEvent } from '../src/parts/ChatViewEvent/ChatViewEvent.ts'
 import {
+  appendChatDebugEvent,
   appendChatViewEvent,
   clearChatSessions,
   deleteChatSession,
@@ -69,6 +70,26 @@ test('subscribeSessionUpdates should send notifications for the subscribed sessi
   })
 
   expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 1, 'session-1']])
+})
+
+test('appendChatDebugEvent should notify subscribed listeners for the session', async () => {
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 6,
+  })
+
+  await appendChatDebugEvent({
+    requestId: 'request-1',
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:01.000Z',
+    type: 'ai-request',
+  })
+
+  expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 6, 'session-1']])
 })
 
 test('subscribeSessionUpdates should replace an existing listener with the same rpcId and uid', async () => {
