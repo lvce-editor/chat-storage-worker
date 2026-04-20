@@ -3,6 +3,7 @@ export { consumeSessionUpdates } from '../ConsumeSessionUpdates/ConsumeSessionUp
 export { deleteChatSession } from '../DeleteChatSession/DeleteChatSession.ts'
 export { getChatSession } from '../GetChatSession/GetChatSession.ts'
 export { getChatViewEvents } from '../GetChatViewEvents/GetChatViewEvents.ts'
+export { getMessageReplayEvents } from '../GetChatViewEvents/GetChatViewEvents.ts'
 export { listChatSessions } from '../ListChatSessions/ListChatSessions.ts'
 export { listChatViewEvents } from '../ListChatViewEvents/ListChatViewEvents.ts'
 export { loadSelectedEventOld } from '../LoadSelectedEventOld/LoadSelectedEventOld.ts'
