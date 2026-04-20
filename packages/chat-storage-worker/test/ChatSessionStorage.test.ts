@@ -7,6 +7,7 @@ import {
   appendChatViewEvent,
   clearChatSessions,
   deleteChatSession,
+  getMessageReplayEvents,
   saveChatSession,
   subscribeSessionUpdates,
   unsubscribeSessionUpdates,
@@ -103,6 +104,60 @@ test('subscribeSessionUpdates should replace an existing listener with the same 
   })
 
   expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 2, 'session-2']])
+})
+
+test('getMessageReplayEvents filters out non-replay events', async () => {
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:00.000Z',
+    type: 'handle-input',
+    value: 'draft',
+  })
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:01.000Z',
+    type: 'handle-submit',
+    value: 'final prompt',
+  })
+  await appendChatViewEvent(
+    createRawEvent({
+      requestId: 'request-1',
+      sessionId: 'session-1',
+      timestamp: '2026-04-19T00:00:02.000Z',
+      turnId: 'turn-1',
+      type: 'ai-response-success',
+      value: {
+        output_text: 'done',
+      },
+    }),
+  )
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:03.000Z',
+    type: 'sse-response-part',
+    value: {
+      type: 'response.in_progress',
+    },
+  })
+
+  await expect(getMessageReplayEvents('session-1')).resolves.toEqual([
+    {
+      sessionId: 'session-1',
+      timestamp: '2026-04-19T00:00:01.000Z',
+      type: 'handle-submit',
+      value: 'final prompt',
+    },
+    {
+      requestId: 'request-1',
+      sessionId: 'session-1',
+      timestamp: '2026-04-19T00:00:02.000Z',
+      turnId: 'turn-1',
+      type: 'ai-response-success',
+      value: {
+        output_text: 'done',
+      },
+    },
+  ])
 })
 
 test('subscribeSessionUpdates should throw when rpc is not registered', () => {
