@@ -1,3 +1,4 @@
+import type { ChatViewEventSimple } from '../ChatViewEventSimple/ChatViewEventSimple.ts'
 import type { ListChatViewEventsResult } from '../ListChatViewEventsResult/ListChatViewEventsResult.ts'
 import {
   chatSessionStorageDatabaseName,
@@ -44,7 +45,7 @@ const getEventsFromStore = async (
   eventStoreName: string,
   sessionId: string,
   sessionIdIndexName: string,
-): Promise<readonly import('../ChatViewEventSimple/ChatViewEventSimple.ts').ChatViewEventSimple[]> => {
+): Promise<readonly ChatViewEventSimple[]> => {
   const database = await listChatViewEventsDependencies.openDatabase(databaseName, databaseVersion)
   try {
     if (!database.objectStoreNames.contains(eventStoreName)) {
