@@ -57,10 +57,9 @@ const notifySessionListener = (listener: SessionListener): void => {
 }
 
 const notifySessionListeners = (sessionId: string): void => {
-  for (const listener of sessionListeners.values()) {
-    if (listener.sessionId !== sessionId) {
-      continue
-    }
+  const value = sessionListeners.values()
+  const matching = [...value].filter((listener) => listener.sessionId === sessionId)
+  for (const listener of matching) {
     notifySessionListener(listener)
   }
 }
