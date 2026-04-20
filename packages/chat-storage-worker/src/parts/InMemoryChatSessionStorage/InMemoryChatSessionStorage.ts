@@ -1,5 +1,5 @@
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
-import type { ChatSessionStorage } from '../ChatSessionStorage/ChatSessionStorage.ts'
+import type { ChatSessionStorage } from '../ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 
 const now = (): string => {
