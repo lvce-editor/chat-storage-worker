@@ -104,6 +104,17 @@ test('subscribeSessionUpdates should replace an existing listener with the same 
   expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 2, 'session-2']])
 })
 
+test('subscribeSessionUpdates should throw when rpc is not registered', () => {
+  expect(() => {
+    subscribeSessionUpdates({
+      rpcId: 999_999,
+      sessionId: 'session-1',
+      type: 'session',
+      uid: 5,
+    })
+  }).toThrow(new Error('No rpc with id 999999 was found'))
+})
+
 test('deleteChatSession should notify subscribed listeners', async () => {
   const mockRpc = createMockRpc()
   RpcRegistry.set(RpcId.RendererWorker, mockRpc)
