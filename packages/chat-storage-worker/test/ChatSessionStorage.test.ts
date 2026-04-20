@@ -163,6 +163,14 @@ test('unsubscribeSessionUpdates should stop notifications for the listener', asy
 test('listChatSessions returns summaries without messages and keeps projectId', async () => {
   jest.resetModules()
   const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
+  const storedSessions: readonly ChatSession[] = [
+    {
+      id: 'session-summary-1',
+      messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
+      projectId: 'project-1',
+      title: 'Summary Session',
+    },
+  ]
 
   chatSessionStorage.setChatSessionStorage({
     appendEvent: jest.fn(async () => {}),
@@ -170,14 +178,7 @@ test('listChatSessions returns summaries without messages and keeps projectId', 
     deleteSession: jest.fn(async () => {}),
     getEvents: jest.fn(async () => []),
     getSession: jest.fn(async () => undefined),
-    listSessions: jest.fn(async () => [
-      {
-        id: 'session-summary-1',
-        messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
-        projectId: 'project-1',
-        title: 'Summary Session',
-      },
-    ]),
+    listSessions: jest.fn(async () => storedSessions),
     setSession: jest.fn(async () => {}),
   })
 
