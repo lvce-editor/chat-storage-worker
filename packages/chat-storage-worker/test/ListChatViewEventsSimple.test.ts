@@ -125,10 +125,7 @@ test('listChatViewEventsSimple falls back to the legacy session event store when
     }
     return legacyDatabase
   })
-  const getEventsBySessionIdMock = jest
-    .fn<GetEventsBySessionId>()
-    .mockResolvedValueOnce([])
-    .mockResolvedValueOnce(events)
+  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>().mockResolvedValueOnce([]).mockResolvedValueOnce(events)
   ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
   ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
 
