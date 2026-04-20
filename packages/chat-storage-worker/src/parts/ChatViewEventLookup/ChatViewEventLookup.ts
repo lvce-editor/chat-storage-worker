@@ -1,4 +1,5 @@
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
+import { filterDebugChatViewEvents } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
 
 export interface ChatViewEventInfo {
   readonly [key: string]: unknown
@@ -146,7 +147,7 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
 }
 
 export const listChatViewEventSummaries = (events: readonly ChatViewEvent[]): readonly ChatViewEventSummary[] => {
-  const eventsWithIds = withEventIds(events)
+  const eventsWithIds = withEventIds(filterDebugChatViewEvents(events))
   return collapseToolExecutionEvents(eventsWithIds).map((event, index) => toLightweightEvent(event, index + 1))
 }
 
@@ -154,7 +155,7 @@ export const loadSelectedChatViewEvent = (events: readonly ChatViewEvent[], even
   if (eventId < 1) {
     return null
   }
-  const eventsWithIds = withEventIds(events)
+  const eventsWithIds = withEventIds(filterDebugChatViewEvents(events))
   const event = eventsWithIds[eventId - 1]
   if (!event) {
     return null

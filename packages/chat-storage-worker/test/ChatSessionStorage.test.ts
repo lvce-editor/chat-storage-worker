@@ -359,6 +359,42 @@ test('listChatViewEvents returns lightweight events with stable raw event ids', 
   })
 })
 
+test('listChatViewEvents excludes required session mutation events from debug results', async () => {
+  jest.resetModules()
+  const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
+
+  await chatSessionStorage.saveChatSession({
+    id: 'session-debug-filter-1',
+    messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
+    title: 'Stored Session',
+  })
+
+  await chatSessionStorage.appendChatViewEvent(
+    createRawEvent({
+      sessionId: 'session-debug-filter-1',
+      timestamp: 25,
+      type: 'handle-input',
+      value: 'hello',
+    }),
+  )
+
+  const result = await chatSessionStorage.listChatViewEvents('session-debug-filter-1')
+
+  expect(result).toEqual({
+    events: [
+      {
+        duration: 0,
+        endTime: 25,
+        eventId: 1,
+        startTime: 25,
+        timestamp: 25,
+        type: 'handle-input',
+      },
+    ],
+    type: 'success',
+  })
+})
+
 test('loadSelectedEvent merges matching tool execution pair', async () => {
   jest.resetModules()
   const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')

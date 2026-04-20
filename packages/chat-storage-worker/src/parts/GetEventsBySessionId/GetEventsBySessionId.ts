@@ -5,6 +5,7 @@ import { collapseToolExecutionEvents } from '../CollapseToolExecutionEvents/Coll
 import { filterEventsBySessionId } from '../FilterEventsBySessionId/FilterEventsBySessionId.ts'
 import { getAllEvents } from '../GetAllEvents/GetAllEvents.ts'
 import { getLightweightEvent } from '../GetLightweightEvent/GetLightweightEvent.ts'
+import { filterDebugChatViewEvents } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
 
 const toLightweightEvents = (events: readonly ChatViewEventSimple[]): readonly ChatViewEventSimple[] => {
   const eventsWithIds = events.map((event, index) => {
@@ -25,8 +26,8 @@ export const getSimpleEventsBySessionId = async (
     const index = store.index(sessionIdIndexName)
     const events = await index.getAll(sessionId)
 
-    return toLightweightEvents(filterEventsBySessionId(events as readonly ChatViewEventSimple[], sessionId))
+    return toLightweightEvents(filterDebugChatViewEvents(filterEventsBySessionId(events as readonly ChatViewEventSimple[], sessionId)))
   }
   const all = await getAllEvents(store)
-  return toLightweightEvents(filterEventsBySessionId(all, sessionId))
+  return toLightweightEvents(filterDebugChatViewEvents(filterEventsBySessionId(all, sessionId)))
 }
