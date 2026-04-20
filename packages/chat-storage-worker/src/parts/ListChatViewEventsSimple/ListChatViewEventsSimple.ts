@@ -1,4 +1,17 @@
+import type { ChatViewEventSimple } from '../ChatViewEventSimple/ChatViewEventSimple.ts'
 import type { ListChatViewEventsResult } from '../ListChatViewEventsResult/ListChatViewEventsResult.ts'
+import {
+  chatSessionStorageDatabaseName,
+  chatSessionStorageDatabaseVersion,
+  chatSessionStorageEventStoreName,
+  chatSessionStorageSessionIdIndexName,
+} from '../ChatSessionStorageConfig/ChatSessionStorageConfig.ts'
+import {
+  debugEventStorageDatabaseName,
+  debugEventStorageDatabaseVersion,
+  debugEventStorageEventStoreName,
+  debugEventStorageSessionIdIndexName,
+} from '../DebugEventStorageConfig/DebugEventStorageConfig.ts'
 import * as GetEventsBySessionId from '../GetEventsBySessionId/GetEventsBySessionId.ts'
 import { isIndexedDbSupported } from '../IsIndexedDbSupported/IsIndexedDbSupported.ts'
 import * as OpenDatabase from '../OpenDatabase/OpenDatabase.ts'
@@ -17,6 +30,35 @@ export const listChatViewEventsDependencies = {
   openDatabase: OpenDatabase.openDatabase,
 }
 
+const shouldUseLegacyFallback = (databaseName: string, databaseVersion: number, eventStoreName: string, sessionIdIndexName: string): boolean => {
+  return (
+    databaseName === debugEventStorageDatabaseName &&
+    databaseVersion === debugEventStorageDatabaseVersion &&
+    eventStoreName === debugEventStorageEventStoreName &&
+    sessionIdIndexName === debugEventStorageSessionIdIndexName
+  )
+}
+
+const getEventsFromStore = async (
+  databaseName: string,
+  databaseVersion: number,
+  eventStoreName: string,
+  sessionId: string,
+  sessionIdIndexName: string,
+): Promise<readonly ChatViewEventSimple[]> => {
+  const database = await listChatViewEventsDependencies.openDatabase(databaseName, databaseVersion)
+  try {
+    if (!database.objectStoreNames.contains(eventStoreName)) {
+      return []
+    }
+    const transaction = database.transaction(eventStoreName, 'readonly')
+    const store = transaction.objectStore(eventStoreName)
+    return listChatViewEventsDependencies.getEventsBySessionId(store, sessionId, sessionIdIndexName)
+  } finally {
+    database.close()
+  }
+}
+
 export const listChatViewEventsSimple = async ({
   databaseName,
   databaseVersion,
@@ -30,31 +72,31 @@ export const listChatViewEventsSimple = async ({
       type: 'not-supported',
     }
   }
+  if (!sessionId) {
+    return {
+      events: [],
+      type: 'success',
+    }
+  }
 
   try {
-    const database = await listChatViewEventsDependencies.openDatabase(databaseName, databaseVersion)
-    try {
-      if (!database.objectStoreNames.contains(eventStoreName)) {
-        return {
-          events: [],
-          type: 'success',
-        }
-      }
-      const transaction = database.transaction(eventStoreName, 'readonly')
-      const store = transaction.objectStore(eventStoreName)
-      if (!sessionId) {
-        return {
-          events: [],
-          type: 'success',
-        }
-      }
-      const events = await listChatViewEventsDependencies.getEventsBySessionId(store, sessionId, sessionIdIndexName)
+    const events = await getEventsFromStore(databaseName, databaseVersion, eventStoreName, sessionId, sessionIdIndexName)
+    if (events.length > 0 || !shouldUseLegacyFallback(databaseName, databaseVersion, eventStoreName, sessionIdIndexName)) {
       return {
         events,
         type: 'success',
       }
-    } finally {
-      database.close()
+    }
+    const legacyEvents = await getEventsFromStore(
+      chatSessionStorageDatabaseName,
+      chatSessionStorageDatabaseVersion,
+      chatSessionStorageEventStoreName,
+      sessionId,
+      chatSessionStorageSessionIdIndexName,
+    )
+    return {
+      events: legacyEvents,
+      type: 'success',
     }
   } catch (error) {
     return {

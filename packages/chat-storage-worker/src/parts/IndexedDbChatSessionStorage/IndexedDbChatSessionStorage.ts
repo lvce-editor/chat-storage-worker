@@ -4,6 +4,12 @@ import { openDB } from 'idb'
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatSessionStorage } from '../ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
+import {
+  chatSessionStorageDatabaseName,
+  chatSessionStorageDatabaseVersion,
+  chatSessionStorageEventStoreName,
+  chatSessionStorageStoreName,
+} from '../ChatSessionStorageConfig/ChatSessionStorageConfig.ts'
 
 interface State {
   readonly databaseName: string
@@ -214,11 +220,11 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
 
   constructor(options: IndexedDbChatSessionStorageOptions = {}) {
     this.state = {
-      databaseName: options.databaseName || 'lvce-chat-view-sessions',
+      databaseName: options.databaseName || chatSessionStorageDatabaseName,
       databasePromise: undefined,
-      databaseVersion: options.databaseVersion || 2,
-      eventStoreName: options.eventStoreName || 'chat-view-events',
-      storeName: options.storeName || 'chat-sessions',
+      databaseVersion: options.databaseVersion || chatSessionStorageDatabaseVersion,
+      eventStoreName: options.eventStoreName || chatSessionStorageEventStoreName,
+      storeName: options.storeName || chatSessionStorageStoreName,
     }
   }
 

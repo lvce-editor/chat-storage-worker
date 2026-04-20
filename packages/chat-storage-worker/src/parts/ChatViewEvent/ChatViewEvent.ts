@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../ChatMessage/ChatMessage.ts'
+import type { ChatViewEventSimple } from '../ChatViewEventSimple/ChatViewEventSimple.ts'
 
-interface ChatViewEventBase {
+interface ChatViewEventBase extends ChatViewEventSimple {
   readonly sessionId: string
   readonly timestamp: string
 }

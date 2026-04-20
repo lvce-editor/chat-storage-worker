@@ -1,6 +1,5 @@
 import type { ChatSessionStorage, SessionListener } from '../ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
-import { createDefaultStorage } from '../CreateDefaultStorage/CreateDefaultStorage.ts'
-import { InMemoryChatSessionStorage } from '../InMemoryChatSessionStorage/InMemoryChatSessionStorage.ts'
+import { createDefaultStorage, createInMemoryStorage } from '../CreateDefaultStorage/CreateDefaultStorage.ts'
 
 let chatSessionStorage: Readonly<ChatSessionStorage> = createDefaultStorage()
 const sessionListeners = new Map<string, SessionListener>()
@@ -18,6 +17,6 @@ export const getSessionListeners = (): Map<string, SessionListener> => {
 }
 
 export const resetChatSessionStorageState = (): void => {
-  chatSessionStorage = new InMemoryChatSessionStorage()
+  chatSessionStorage = createInMemoryStorage()
   sessionListeners.clear()
 }

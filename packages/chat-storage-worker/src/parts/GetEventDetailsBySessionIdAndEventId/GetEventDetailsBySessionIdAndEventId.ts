@@ -1,37 +1,26 @@
 // cspell:ignore IDBP
 import type { IDBPObjectStore } from 'idb'
 import type { ChatViewEventSimple } from '../ChatViewEventSimple/ChatViewEventSimple.ts'
+import { filterEventsBySessionId } from '../FilterEventsBySessionId/FilterEventsBySessionId.ts'
+import { filterDebugChatViewEvents } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
 
-type EventStore = Pick<IDBPObjectStore, 'get' | 'getAll' | 'index' | 'indexNames'>
+type EventStore = Pick<IDBPObjectStore, 'getAll' | 'index' | 'indexNames'>
 
 const startedEventType = 'tool-execution-started'
 const finishedEventType = 'tool-execution-finished'
 
-const getRawEventBySessionIdAndEventId = async (
+const getEventsBySessionId = async (
   store: EventStore, // eslint-disable-line @typescript-eslint/prefer-readonly-parameter-types
   sessionId: string,
   sessionIdIndexName: string,
-  eventId: number,
-): Promise<ChatViewEventSimple | undefined> => {
-  if (eventId < 1) {
-    return undefined
-  }
+): Promise<readonly ChatViewEventSimple[]> => {
   if (store.indexNames.contains(sessionIdIndexName)) {
     const index = store.index(sessionIdIndexName)
-    const keys = await index.getAllKeys(sessionId, eventId)
-    if (keys.length < eventId) {
-      return undefined
-    }
-    const key = keys.at(-1)
-    if (key === undefined) {
-      return undefined
-    }
-    const event = await store.get(key)
-    return event as ChatViewEventSimple | undefined
+    const events = await index.getAll(sessionId)
+    return filterDebugChatViewEvents(filterEventsBySessionId(events as readonly ChatViewEventSimple[], sessionId))
   }
   const all = (await store.getAll()) as readonly ChatViewEventSimple[]
-  const events = all.filter((event) => event.sessionId === sessionId)
-  return events[eventId - 1]
+  return filterDebugChatViewEvents(filterEventsBySessionId(all, sessionId))
 }
 
 const getTimestamp = (value: unknown): string | number | undefined => {
@@ -65,7 +54,11 @@ export const getEventDetailsBySessionIdAndEventId = async (
   eventId: number,
   summaryType: string,
 ): Promise<ChatViewEventSimple | undefined> => {
-  const event = await getRawEventBySessionIdAndEventId(store, sessionId, sessionIdIndexName, eventId)
+  if (eventId < 1) {
+    return undefined
+  }
+  const events = await getEventsBySessionId(store, sessionId, sessionIdIndexName)
+  const event = events[eventId - 1]
   if (!event) {
     return undefined
   }
@@ -81,7 +74,7 @@ export const getEventDetailsBySessionIdAndEventId = async (
       eventId,
     }
   }
-  const nextEvent = await getRawEventBySessionIdAndEventId(store, sessionId, sessionIdIndexName, eventId + 1)
+  const nextEvent = events[eventId]
   if (!nextEvent || nextEvent.type !== finishedEventType || nextEvent.sessionId !== sessionId || !hasMatchingToolName(event, nextEvent)) {
     return {
       ...event,

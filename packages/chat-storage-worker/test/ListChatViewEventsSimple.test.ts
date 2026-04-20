@@ -96,8 +96,60 @@ test('listChatViewEventsSimple returns an empty result when sessionId is missing
       events: [],
       type: 'success',
     })
+    expect(openDatabaseMock).not.toHaveBeenCalled()
     expect(getEventsBySessionIdMock).not.toHaveBeenCalled()
-    expect(database.close).toHaveBeenCalledTimes(1)
+    expect(database.close).not.toHaveBeenCalled()
+  } finally {
+    ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = originalOpenDatabase
+    ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = originalGetEventsBySessionId
+  }
+})
+
+test('listChatViewEventsSimple falls back to the legacy session event store when the debug database has no events', async () => {
+  const originalOpenDatabase = ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
+  const originalGetEventsBySessionId = ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
+  const debugDatabase = createDatabase(true)
+  const legacyDatabase = createDatabase(true)
+  const events: readonly ChatViewEventSimple[] = [
+    {
+      eventId: 1,
+      sessionId: 'session-1',
+      timestamp: 25,
+      type: 'handle-input',
+      value: 'hello',
+    },
+  ]
+  const openDatabaseMock = jest.fn<OpenDatabase>(async (databaseName: string) => {
+    if (databaseName === 'lvce-chat-debug-events') {
+      return debugDatabase
+    }
+    return legacyDatabase
+  })
+  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>().mockResolvedValueOnce([]).mockResolvedValueOnce(events)
+  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
+
+  try {
+    const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
+      databaseName: 'lvce-chat-debug-events',
+      databaseVersion: 1,
+      eventStoreName: 'chat-debug-events',
+      sessionId: 'session-1',
+      sessionIdIndexName: 'sessionId',
+    })
+
+    expect(openDatabaseMock.mock.calls).toEqual([
+      ['lvce-chat-debug-events', 1],
+      ['lvce-chat-view-sessions', 2],
+    ])
+    expect(getEventsBySessionIdMock.mock.calls[0][0]).toBe(debugDatabase.store)
+    expect(getEventsBySessionIdMock.mock.calls[1][0]).toBe(legacyDatabase.store)
+    expect(result).toEqual({
+      events,
+      type: 'success',
+    })
+    expect(debugDatabase.close).toHaveBeenCalledTimes(1)
+    expect(legacyDatabase.close).toHaveBeenCalledTimes(1)
   } finally {
     ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = originalOpenDatabase
     ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = originalGetEventsBySessionId

@@ -101,3 +101,53 @@ test('loadSelectedEvent returns null when the configured event store does not ex
     LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = originalGetEventDetailsBySessionIdAndEventId
   }
 })
+
+test('loadSelectedEvent falls back to the legacy session event store when the debug database has no event', async () => {
+  const originalOpenDatabase = LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
+  const originalGetEventDetailsBySessionIdAndEventId = LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
+  const debugDatabase = createDatabase(true)
+  const legacyDatabase = createDatabase(true)
+  const event: ChatViewEventSimple = {
+    eventId: 1,
+    sessionId: 'session-1',
+    type: 'tool-execution',
+  }
+  const openDatabaseMock = jest.fn<OpenDatabase>(async (databaseName: string) => {
+    if (databaseName === 'lvce-chat-debug-events') {
+      return debugDatabase
+    }
+    return legacyDatabase
+  })
+  const getEventDetailsBySessionIdAndEventIdMock = jest
+    .fn<GetEventDetailsBySessionIdAndEventId>()
+    .mockResolvedValueOnce(undefined)
+    .mockResolvedValueOnce(event)
+  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
+    getEventDetailsBySessionIdAndEventIdMock as GetEventDetailsBySessionIdAndEventId
+
+  try {
+    const result = await LoadSelectedEvent.loadSelectedEvent({
+      databaseName: 'lvce-chat-debug-events',
+      databaseVersion: 1,
+      eventId: 1,
+      eventStoreName: 'chat-debug-events',
+      sessionId: 'session-1',
+      sessionIdIndexName: 'sessionId',
+      type: 'tool-execution',
+    })
+
+    expect(openDatabaseMock.mock.calls).toEqual([
+      ['lvce-chat-debug-events', 1],
+      ['lvce-chat-view-sessions', 2],
+    ])
+    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][0]).toBe(debugDatabase.store)
+    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[1][0]).toBe(legacyDatabase.store)
+    expect(result).toEqual(event)
+    expect(debugDatabase.close).toHaveBeenCalledTimes(1)
+    expect(legacyDatabase.close).toHaveBeenCalledTimes(1)
+  } finally {
+    LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = originalOpenDatabase
+    LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = originalGetEventDetailsBySessionIdAndEventId
+  }
+})
