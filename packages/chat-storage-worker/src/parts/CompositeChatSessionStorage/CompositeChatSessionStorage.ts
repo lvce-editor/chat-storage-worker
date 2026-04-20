@@ -1,6 +1,7 @@
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatSessionStorage } from '../ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
+import type { DebugEvent } from '../DebugEventStorageTypes/DebugEventStorageTypes.ts'
 import type { DebugEventStorage } from '../DebugEventStorageTypes/DebugEventStorageTypes.ts'
 import { filterDebugChatViewEvents, isRequiredChatViewEvent } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
 
@@ -9,6 +10,10 @@ export class CompositeChatSessionStorage implements ChatSessionStorage {
     private readonly sessionStorage: Readonly<ChatSessionStorage>,
     private readonly debugEventStorage: Readonly<DebugEventStorage>,
   ) {}
+
+  async appendDebugEvent(event: DebugEvent): Promise<void> {
+    await this.debugEventStorage.appendEvent(event)
+  }
 
   async appendEvent(event: ChatViewEvent): Promise<void> {
     if (isRequiredChatViewEvent(event)) {

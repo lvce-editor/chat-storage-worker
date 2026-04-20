@@ -1,3 +1,4 @@
+export { appendChatDebugEvent } from '../AppendChatDebugEvent/AppendChatDebugEvent.ts'
 export { appendChatViewEvent } from '../AppendChatViewEvent/AppendChatViewEvent.ts'
 export { consumeSessionUpdates } from '../ConsumeSessionUpdates/ConsumeSessionUpdates.ts'
 export { deleteChatSession } from '../DeleteChatSession/DeleteChatSession.ts'
