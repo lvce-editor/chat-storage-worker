@@ -26,6 +26,13 @@ const getSessionListenerKey = ({ rpcId, uid }: SessionListenerIdentifier): strin
   return `${rpcId}:${uid}`
 }
 
+const assertRpcAvailable = (rpcId: number): void => {
+  const rpc = RpcRegistry.get(rpcId)
+  if (!rpc) {
+    throw new Error(`No rpc with id ${rpcId} was found`)
+  }
+}
+
 const notifySessionListener = (listener: SessionListener): void => {
   const rpc = RpcRegistry.get(listener.rpcId)
   if (!rpc) {
@@ -135,6 +142,7 @@ export const getChatViewEvents = async (sessionId?: string): Promise<readonly Ch
 }
 
 export const subscribeSessionUpdates = (listener: SessionListener): void => {
+  assertRpcAvailable(listener.rpcId)
   sessionListeners.set(getSessionListenerKey(listener), listener)
 }
 
