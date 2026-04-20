@@ -2,7 +2,7 @@ import type { ChatSession } from '../ChatSession/ChatSession.ts'
 import type { ChatSessionStorage } from '../ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 import type { DebugEvent, DebugEventStorage } from '../DebugEventStorageTypes/DebugEventStorageTypes.ts'
-import { filterDebugChatViewEvents } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
+import { filterDebugChatViewEvents, isRequiredChatViewEvent } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
 
 export class CompositeChatSessionStorage implements ChatSessionStorage {
   constructor(
