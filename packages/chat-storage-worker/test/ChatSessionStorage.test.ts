@@ -21,10 +21,6 @@ const createSession = (id: string, title: string): ChatSession => {
   }
 }
 
-const createRawEvent = (event: Readonly<Record<string, unknown>>): ChatViewEvent => {
-  return event as unknown as ChatViewEvent
-}
-
 beforeEach(async () => {
   const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
   chatSessionStorage.resetChatSessionStorage()
@@ -119,18 +115,14 @@ test('getMessageReplayEvents filters out non-replay events', async () => {
     type: 'handle-submit',
     value: 'final prompt',
   })
-  await appendChatViewEvent(
-    createRawEvent({
-      requestId: 'request-1',
-      sessionId: 'session-1',
-      timestamp: '2026-04-19T00:00:02.000Z',
-      turnId: 'turn-1',
-      type: 'ai-response-success',
-      value: {
-        output_text: 'done',
-      },
-    }),
-  )
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:02.000Z',
+    type: 'sse-response-completed',
+    value: {
+      output_text: 'done',
+    },
+  })
   await appendChatViewEvent({
     sessionId: 'session-1',
     timestamp: '2026-04-19T00:00:03.000Z',
@@ -148,11 +140,9 @@ test('getMessageReplayEvents filters out non-replay events', async () => {
       value: 'final prompt',
     },
     {
-      requestId: 'request-1',
       sessionId: 'session-1',
       timestamp: '2026-04-19T00:00:02.000Z',
-      turnId: 'turn-1',
-      type: 'ai-response-success',
+      type: 'sse-response-completed',
       value: {
         output_text: 'done',
       },

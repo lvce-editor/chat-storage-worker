@@ -2,13 +2,12 @@ import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
 import { getChatSessionStorage } from '../ChatSessionStorageState/ChatSessionStorageState.ts'
 
 const isMessageReplayEvent = (event: ChatViewEvent): boolean => {
-  const type = Reflect.get(event, 'type')
   return (
-    type === 'chat-session-messages-replaced' ||
-    type === 'chat-message-added' ||
-    type === 'chat-message-updated' ||
-    type === 'handle-submit' ||
-    type === 'ai-response-success'
+    event.type === 'chat-session-messages-replaced' ||
+    event.type === 'chat-message-added' ||
+    event.type === 'chat-message-updated' ||
+    event.type === 'handle-submit' ||
+    event.type === 'sse-response-completed'
   )
 }
 
