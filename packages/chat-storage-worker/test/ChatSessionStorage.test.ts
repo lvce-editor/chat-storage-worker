@@ -5,6 +5,7 @@ import type { ChatSession } from '../src/parts/ChatSession/ChatSession.ts'
 import type { ChatViewEvent } from '../src/parts/ChatViewEvent/ChatViewEvent.ts'
 import {
   appendChatViewEvent,
+  clearChatSessions,
   deleteChatSession,
   saveChatSession,
   subscribeSessionUpdates,
@@ -157,6 +158,98 @@ test('unsubscribeSessionUpdates should stop notifications for the listener', asy
   })
 
   expect(mockRpc.invocations).toEqual([])
+})
+
+test('listChatSessions returns summaries without messages and keeps projectId', async () => {
+  jest.resetModules()
+  const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
+  const storedSessions: readonly ChatSession[] = [
+    {
+      id: 'session-summary-1',
+      messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
+      projectId: 'project-1',
+      title: 'Summary Session',
+    },
+  ]
+
+  chatSessionStorage.setChatSessionStorage({
+    appendEvent: jest.fn(async () => {}),
+    clear: jest.fn(async () => {}),
+    deleteSession: jest.fn(async () => {}),
+    getEvents: jest.fn(async () => []),
+    getSession: jest.fn(async () => undefined),
+    listSessions: jest.fn(async () => storedSessions),
+    setSession: jest.fn(async () => {}),
+  })
+
+  const result = await chatSessionStorage.listChatSessions()
+
+  expect(result).toEqual([
+    {
+      id: 'session-summary-1',
+      messages: [],
+      projectId: 'project-1',
+      title: 'Summary Session',
+    },
+  ])
+})
+
+test('getChatSession returns a cloned session value', async () => {
+  jest.resetModules()
+  const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
+
+  await chatSessionStorage.saveChatSession({
+    id: 'session-clone-1',
+    messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
+    title: 'Clone Session',
+  })
+
+  const result = await chatSessionStorage.getChatSession('session-clone-1')
+
+  expect(result).toEqual({
+    id: 'session-clone-1',
+    messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
+    title: 'Clone Session',
+  })
+
+  if (!result) {
+    throw new Error('expected session to exist')
+  }
+
+  const reread = await chatSessionStorage.getChatSession('session-clone-1')
+
+  expect(reread?.messages).not.toBe(result.messages)
+
+  expect(reread).toEqual({
+    id: 'session-clone-1',
+    messages: [{ id: 'm1', role: 'assistant', text: 'stored', time: '2026-01-01T00:00:00.000Z' }],
+    title: 'Clone Session',
+  })
+})
+
+test('clearChatSessions notifies all subscribed listeners', async () => {
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
+
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 10,
+  })
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-2',
+    type: 'session',
+    uid: 11,
+  })
+
+  await clearChatSessions()
+
+  expect(mockRpc.invocations).toEqual([
+    ['handleChatStorageUpdate', 10, 'session-1'],
+    ['handleChatStorageUpdate', 11, 'session-2'],
+  ])
 })
 
 test('falls back to in-memory storage if indexedDB is unavailable', async () => {
