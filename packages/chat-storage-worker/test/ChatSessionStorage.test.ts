@@ -1,13 +1,14 @@
 import { beforeEach, expect, jest, test } from '@jest/globals'
+import { RpcId } from '@lvce-editor/constants'
+import * as RpcRegistry from '@lvce-editor/rpc-registry'
 import type { ChatSession } from '../src/parts/ChatSession/ChatSession.ts'
 import type { ChatViewEvent } from '../src/parts/ChatViewEvent/ChatViewEvent.ts'
 import {
   appendChatViewEvent,
-  consumeSessionUpdates,
   deleteChatSession,
   saveChatSession,
   subscribeSessionUpdates,
-  waitForSessionUpdates,
+  unsubscribeSessionUpdates,
 } from '../src/parts/ChatSessionStorage/ChatSessionStorage.ts'
 
 const createSession = (id: string, title: string): ChatSession => {
@@ -27,8 +28,28 @@ beforeEach(async () => {
   chatSessionStorage.resetChatSessionStorage()
 })
 
-test('subscribeSessionUpdates should buffer notifications for one session only', async () => {
-  subscribeSessionUpdates('session-1', 'listener-1')
+const createMockRpc = (): any => {
+  const invocations: Array<readonly [string, number, string]> = []
+  return {
+    dispose: jest.fn(async () => {}),
+    invocations,
+    invoke: jest.fn(async () => {}),
+    invokeAndTransfer: jest.fn(async () => {}),
+    send: jest.fn((method: string, uid: number, sessionId: string) => {
+      invocations.push([method, uid, sessionId])
+    }),
+  }
+}
+
+test('subscribeSessionUpdates should send notifications for the subscribed session only', async () => {
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 1,
+  })
 
   await appendChatViewEvent({
     sessionId: 'session-2',
@@ -37,7 +58,7 @@ test('subscribeSessionUpdates should buffer notifications for one session only',
     value: 'other session',
   })
 
-  expect(consumeSessionUpdates('listener-1')).toEqual([])
+  expect(mockRpc.invocations).toEqual([])
 
   await appendChatViewEvent({
     sessionId: 'session-1',
@@ -46,56 +67,85 @@ test('subscribeSessionUpdates should buffer notifications for one session only',
     value: 'watched session',
   })
 
-  expect(consumeSessionUpdates('listener-1')).toEqual([
-    {
-      revision: 1,
-      sessionId: 'session-1',
-      type: 'session-updated',
-    },
-  ])
+  expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 1, 'session-1']])
 })
 
-test('waitForSessionUpdates should resolve when subscribed session changes', async () => {
-  subscribeSessionUpdates('session-1', 'listener-2')
+test('subscribeSessionUpdates should replace an existing listener with the same rpcId and uid', async () => {
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
 
-  const waitPromise = waitForSessionUpdates('listener-2', 500)
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 2,
+  })
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-2',
+    type: 'session',
+    uid: 2,
+  })
 
   await appendChatViewEvent({
     sessionId: 'session-1',
     timestamp: '2026-04-19T00:00:02.000Z',
     type: 'handle-input',
+    value: 'ignored update',
+  })
+
+  await appendChatViewEvent({
+    sessionId: 'session-2',
+    timestamp: '2026-04-19T00:00:03.000Z',
+    type: 'handle-input',
     value: 'trigger update',
   })
 
-  await expect(waitPromise).resolves.toEqual([
-    {
-      revision: 1,
-      sessionId: 'session-1',
-      type: 'session-updated',
-    },
-  ])
+  expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 2, 'session-2']])
 })
 
 test('deleteChatSession should notify subscribed listeners', async () => {
-  subscribeSessionUpdates('session-1', 'listener-3')
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 3,
+  })
 
   await saveChatSession(createSession('session-1', 'Session 1'))
-  expect(consumeSessionUpdates('listener-3')).toEqual([
-    {
-      revision: 1,
-      sessionId: 'session-1',
-      type: 'session-updated',
-    },
-  ])
 
   await deleteChatSession('session-1')
-  expect(consumeSessionUpdates('listener-3')).toEqual([
-    {
-      revision: 2,
-      sessionId: 'session-1',
-      type: 'session-deleted',
-    },
+  expect(mockRpc.invocations).toEqual([
+    ['handleChatStorageUpdate', 3, 'session-1'],
+    ['handleChatStorageUpdate', 3, 'session-1'],
   ])
+})
+
+test('unsubscribeSessionUpdates should stop notifications for the listener', async () => {
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 4,
+  })
+
+  unsubscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    uid: 4,
+  })
+
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:04.000Z',
+    type: 'handle-input',
+    value: 'ignored update',
+  })
+
+  expect(mockRpc.invocations).toEqual([])
 })
 
 test('falls back to in-memory storage if indexedDB is unavailable', async () => {
