@@ -26,13 +26,17 @@ export class CompositeChatSessionStorage implements ChatSessionStorage {
     await this.sessionStorage.deleteSession(id)
   }
 
-  async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {
+  async getEvents(sessionId: string): Promise<readonly ChatViewEvent[]> {
+    return this.sessionStorage.getEvents(sessionId)
+  }
+
+  async getDebugEvents(sessionId: string): Promise<readonly DebugEvent[]> {
     const debugEvents = await this.debugEventStorage.getEvents(sessionId)
     if (debugEvents.length > 0) {
-      return debugEvents as readonly ChatViewEvent[]
+      return debugEvents
     }
     const legacyEvents = await this.sessionStorage.getEvents(sessionId)
-    return filterDebugChatViewEvents(legacyEvents)
+    return filterDebugChatViewEvents(legacyEvents) as readonly DebugEvent[]
   }
 
   async getSession(id: string): Promise<ChatSession | undefined> {

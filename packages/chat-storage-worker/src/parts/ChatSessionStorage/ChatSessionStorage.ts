@@ -2,6 +2,7 @@ export { appendChatDebugEvent } from '../AppendChatDebugEvent/AppendChatDebugEve
 export { appendChatViewEvent } from '../AppendChatViewEvent/AppendChatViewEvent.ts'
 export { consumeSessionUpdates } from '../ConsumeSessionUpdates/ConsumeSessionUpdates.ts'
 export { deleteChatSession } from '../DeleteChatSession/DeleteChatSession.ts'
+export { getDebugEvents } from '../GetDebugEvents/GetDebugEvents.ts'
 export { getChatSession } from '../GetChatSession/GetChatSession.ts'
 export { getChatViewEvents } from '../GetChatViewEvents/GetChatViewEvents.ts'
 export { listChatSessions } from '../ListChatSessions/ListChatSessions.ts'

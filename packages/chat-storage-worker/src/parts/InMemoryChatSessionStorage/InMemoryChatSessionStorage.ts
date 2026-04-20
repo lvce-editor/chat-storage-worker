@@ -201,10 +201,7 @@ export class InMemoryChatSessionStorage implements ChatSessionStorage {
     })
   }
 
-  async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {
-    if (!sessionId) {
-      return [...this.events]
-    }
+  async getEvents(sessionId: string): Promise<readonly ChatViewEvent[]> {
     return this.events.filter((event) => event.sessionId === sessionId)
   }
 

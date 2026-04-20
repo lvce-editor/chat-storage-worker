@@ -323,11 +323,8 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
     })
   }
 
-  async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {
-    if (sessionId) {
-      return this.getEventsBySessionId(sessionId)
-    }
-    return this.listEventsInternal()
+  async getEvents(sessionId: string): Promise<readonly ChatViewEvent[]> {
+    return this.getEventsBySessionId(sessionId)
   }
 
   async getSession(id: string): Promise<ChatSession | undefined> {
