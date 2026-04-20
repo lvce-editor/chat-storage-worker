@@ -33,11 +33,11 @@ const createMockRpc = (): any => {
   return {
     dispose: jest.fn(async () => {}),
     invocations,
-    invoke: jest.fn(async () => {}),
-    invokeAndTransfer: jest.fn(async () => {}),
-    send: jest.fn((method: string, uid: number, sessionId: string) => {
+    invoke: jest.fn(async (method: string, uid: number, sessionId: string) => {
       invocations.push([method, uid, sessionId])
     }),
+    invokeAndTransfer: jest.fn(async () => {}),
+    send: jest.fn(),
   }
 }
 
