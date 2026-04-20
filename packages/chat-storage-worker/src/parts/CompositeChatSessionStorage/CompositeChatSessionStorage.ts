@@ -16,10 +16,6 @@ export class CompositeChatSessionStorage implements ChatSessionStorage {
   }
 
   async appendEvent(event: ChatViewEvent): Promise<void> {
-    if (isRequiredChatViewEvent(event)) {
-      await this.sessionStorage.appendEvent(event)
-      return
-    }
     await this.debugEventStorage.appendEvent(event)
   }
 

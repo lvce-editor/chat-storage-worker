@@ -1,6 +1,7 @@
 import { expect, jest, test } from '@jest/globals'
 import type { ChatSession } from '../src/parts/ChatSession/ChatSession.ts'
 import type { ChatSessionStorage } from '../src/parts/ChatSessionStorageTypes/ChatSessionStorageTypes.ts'
+import type { DebugEvent } from '../src/parts/DebugEventStorageTypes/DebugEventStorageTypes.ts'
 import type { DebugEventStorage } from '../src/parts/DebugEventStorageTypes/DebugEventStorageTypes.ts'
 import { CompositeChatSessionStorage } from '../src/parts/CompositeChatSessionStorage/CompositeChatSessionStorage.ts'
 
@@ -82,20 +83,16 @@ test('appendDebugEvent writes directly to debug storage', async () => {
   const sessionStorage = createSessionStorage()
   const debugEventStorage = createDebugEventStorage()
   const storage = new CompositeChatSessionStorage(sessionStorage, debugEventStorage)
-
-  await storage.appendDebugEvent({
+  const event: DebugEvent = {
     body: { foo: 'bar' },
     sessionId: 'session-1',
     timestamp: '2026-04-20T00:00:00.000Z',
     type: 'ai-request',
-  })
+  }
+
+  await storage.appendDebugEvent(event)
 
   expect(debugEventStorage.appendEvent).toHaveBeenCalledTimes(1)
-  expect(debugEventStorage.appendEvent).toHaveBeenCalledWith({
-    body: { foo: 'bar' },
-    sessionId: 'session-1',
-    timestamp: '2026-04-20T00:00:00.000Z',
-    type: 'ai-request',
-  })
+  expect(debugEventStorage.appendEvent).toHaveBeenCalledWith(event)
   expect(sessionStorage.appendEvent).not.toHaveBeenCalled()
 })
