@@ -80,7 +80,7 @@ test('clear removes sessions and events', async () => {
   })
   await storage.clear()
   const sessions = await storage.listSessions()
-  const events = await storage.getEvents()
+  const events = await storage.getEvents('session-1')
   expect(sessions).toEqual([])
   expect(events).toEqual([])
 })
