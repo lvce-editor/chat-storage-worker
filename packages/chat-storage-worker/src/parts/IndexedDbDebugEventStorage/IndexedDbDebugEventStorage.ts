@@ -31,7 +31,7 @@ type StoredDebugEvent = DebugEvent & {
 const toDebugEvent = (event: StoredDebugEvent): DebugEvent => {
   const { eventId, ...debugEvent } = event
   void eventId
-  return debugEvent as DebugEvent
+  return debugEvent
 }
 
 export class IndexedDbDebugEventStorage implements DebugEventStorage {

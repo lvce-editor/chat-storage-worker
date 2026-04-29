@@ -43,9 +43,9 @@ test('loadSelectedEvent reads event details from the configured database using a
   }
   const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
   const getEventDetailsBySessionIdAndEventIdMock = jest.fn<GetEventDetailsBySessionIdAndEventId>(async () => event)
-  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
   LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
-    getEventDetailsBySessionIdAndEventIdMock as GetEventDetailsBySessionIdAndEventId
+    getEventDetailsBySessionIdAndEventIdMock
 
   try {
     const result = await LoadSelectedEvent.loadSelectedEvent({
@@ -78,9 +78,9 @@ test('loadSelectedEvent returns null when the configured event store does not ex
   const database = createDatabase(false)
   const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
   const getEventDetailsBySessionIdAndEventIdMock = jest.fn<GetEventDetailsBySessionIdAndEventId>(async () => undefined)
-  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
   LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
-    getEventDetailsBySessionIdAndEventIdMock as GetEventDetailsBySessionIdAndEventId
+    getEventDetailsBySessionIdAndEventIdMock
 
   try {
     const result = await LoadSelectedEvent.loadSelectedEvent({
@@ -122,9 +122,9 @@ test('loadSelectedEvent falls back to the legacy session event store when the de
     .fn<GetEventDetailsBySessionIdAndEventId>()
     .mockResolvedValueOnce(undefined)
     .mockResolvedValueOnce(event)
-  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock as OpenDatabase
+  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
   LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
-    getEventDetailsBySessionIdAndEventIdMock as GetEventDetailsBySessionIdAndEventId
+    getEventDetailsBySessionIdAndEventIdMock
 
   try {
     const result = await LoadSelectedEvent.loadSelectedEvent({
