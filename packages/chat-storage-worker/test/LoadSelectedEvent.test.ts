@@ -44,8 +44,7 @@ test('loadSelectedEvent reads event details from the configured database using a
   const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
   const getEventDetailsBySessionIdAndEventIdMock = jest.fn<GetEventDetailsBySessionIdAndEventId>(async () => event)
   LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
-  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
-    getEventDetailsBySessionIdAndEventIdMock
+  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = getEventDetailsBySessionIdAndEventIdMock
 
   try {
     const result = await LoadSelectedEvent.loadSelectedEvent({
@@ -79,8 +78,7 @@ test('loadSelectedEvent returns null when the configured event store does not ex
   const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
   const getEventDetailsBySessionIdAndEventIdMock = jest.fn<GetEventDetailsBySessionIdAndEventId>(async () => undefined)
   LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
-  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
-    getEventDetailsBySessionIdAndEventIdMock
+  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = getEventDetailsBySessionIdAndEventIdMock
 
   try {
     const result = await LoadSelectedEvent.loadSelectedEvent({
@@ -123,8 +121,7 @@ test('loadSelectedEvent falls back to the legacy session event store when the de
     .mockResolvedValueOnce(undefined)
     .mockResolvedValueOnce(event)
   LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
-  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId =
-    getEventDetailsBySessionIdAndEventIdMock
+  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = getEventDetailsBySessionIdAndEventIdMock
 
   try {
     const result = await LoadSelectedEvent.loadSelectedEvent({
