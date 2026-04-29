@@ -39,7 +39,7 @@ type StoredChatViewEvent = ChatViewEvent & {
 const toChatViewEvent = (event: StoredChatViewEvent): ChatViewEvent => {
   const { eventId, ...chatViewEvent } = event
   void eventId
-  return chatViewEvent as ChatViewEvent
+  return chatViewEvent
 }
 
 const now = (): string => {

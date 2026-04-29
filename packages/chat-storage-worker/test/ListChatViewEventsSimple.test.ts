@@ -47,8 +47,8 @@ test('listChatViewEventsSimple reads from the configured database using an optio
   ]
   const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
   const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>(async () => events)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
+  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock
+  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
@@ -80,8 +80,8 @@ test('listChatViewEventsSimple returns an empty result when sessionId is missing
   const database = createDatabase(true)
   const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
   const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>(async () => [])
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
+  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock
+  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
@@ -126,8 +126,8 @@ test('listChatViewEventsSimple falls back to the legacy session event store when
     return legacyDatabase
   })
   const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>().mockResolvedValueOnce([]).mockResolvedValueOnce(events)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock as OpenDatabase
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock as GetEventsBySessionId
+  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock
+  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock
 
   try {
     const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
