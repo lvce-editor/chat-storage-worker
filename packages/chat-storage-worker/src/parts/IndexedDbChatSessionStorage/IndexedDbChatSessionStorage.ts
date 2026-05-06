@@ -37,8 +37,7 @@ type StoredChatViewEvent = ChatViewEvent & {
 }
 
 const toChatViewEvent = (event: StoredChatViewEvent): ChatViewEvent => {
-  const { eventId, ...chatViewEvent } = event
-  void eventId
+  const { eventId: _eventId, ...chatViewEvent } = event
   return chatViewEvent
 }
 
@@ -151,67 +150,92 @@ const getMutationEvents = (previous: ChatSession | undefined, next: ChatSession)
   return events
 }
 
+interface ReplayState {
+  readonly deleted: boolean
+  readonly messages: readonly ChatSession['messages'][number][]
+  readonly title: string
+}
+
+const getUpdatedMessage = (
+  message: Readonly<ChatSession['messages'][number]>,
+  event: Extract<ChatViewEvent, { type: 'chat-message-updated' }>,
+): ChatSession['messages'][number] => {
+  if (message.id !== event.messageId) {
+    return message
+  }
+  return {
+    ...message,
+    ...(event.inProgress === undefined
+      ? {}
+      : {
+          inProgress: event.inProgress,
+        }),
+    text: event.text,
+    time: event.time,
+    ...(event.toolCalls === undefined
+      ? {}
+      : {
+          toolCalls: event.toolCalls,
+        }),
+  }
+}
+
+const applyReplayEvent = (state: ReplayState, event: ChatViewEvent): ReplayState => {
+  switch (event.type) {
+    case 'chat-message-added':
+      return {
+        ...state,
+        messages: [...state.messages, event.message],
+      }
+    case 'chat-message-updated':
+      return {
+        ...state,
+        messages: state.messages.map((message) => getUpdatedMessage(message, event)),
+      }
+    case 'chat-session-created':
+      return {
+        ...state,
+        deleted: false,
+        title: event.title,
+      }
+    case 'chat-session-deleted':
+      return {
+        ...state,
+        deleted: true,
+      }
+    case 'chat-session-messages-replaced':
+      return {
+        ...state,
+        messages: [...event.messages],
+      }
+    case 'chat-session-title-updated':
+      return {
+        ...state,
+        title: event.title,
+      }
+  }
+  return state
+}
+
 const replaySession = (id: string, summary: SessionSummary | undefined, events: readonly ChatViewEvent[]): ChatSession | undefined => {
-  let deleted = false
-  let title = summary?.title || ''
-  let messages: readonly ChatSession['messages'][number][] = summary?.messages ? [...summary.messages] : []
+  let state: ReplayState = {
+    deleted: false,
+    messages: summary?.messages ? [...summary.messages] : [],
+    title: summary?.title || '',
+  }
   for (const event of events) {
     if (event.sessionId !== id) {
       continue
     }
-    if (event.type === 'chat-session-created') {
-      const { title: eventTitle } = event
-      deleted = false
-      title = eventTitle
-      continue
-    }
-    if (event.type === 'chat-session-deleted') {
-      deleted = true
-      continue
-    }
-    if (event.type === 'chat-session-title-updated') {
-      const { title: eventTitle } = event
-      title = eventTitle
-      continue
-    }
-    if (event.type === 'chat-message-added') {
-      messages = [...messages, event.message]
-      continue
-    }
-    if (event.type === 'chat-message-updated') {
-      messages = messages.map((message) => {
-        if (message.id !== event.messageId) {
-          return message
-        }
-        return {
-          ...message,
-          ...(event.inProgress === undefined
-            ? {}
-            : {
-                inProgress: event.inProgress,
-              }),
-          text: event.text,
-          time: event.time,
-          ...(event.toolCalls === undefined
-            ? {}
-            : {
-                toolCalls: event.toolCalls,
-              }),
-        }
-      })
-      continue
-    }
-    if (event.type === 'chat-session-messages-replaced') {
-      messages = [...event.messages]
-    }
+    state = applyReplayEvent(state, event)
   }
-  if (deleted || !title) {
+  if (state.deleted || !state.title) {
     return undefined
   }
   return {
     id,
-    messages,
-    title,
+    messages: state.messages,
+    title: state.title,
   }
 }
 
