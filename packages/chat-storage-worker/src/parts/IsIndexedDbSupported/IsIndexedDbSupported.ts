@@ -8,5 +8,5 @@ export const isIndexedDbSupported = (indexedDbSupportOverride?: boolean): boolea
   if (typeof override === 'boolean') {
     return override
   }
-  return globalThis.indexedDB !== undefined
+  return globalThis.indexedDB != undefined
 }

@@ -29,8 +29,7 @@ type StoredDebugEvent = DebugEvent & {
 }
 
 const toDebugEvent = (event: StoredDebugEvent): DebugEvent => {
-  const { eventId, ...debugEvent } = event
-  void eventId
+  const { eventId: _eventId, ...debugEvent } = event
   return debugEvent
 }
 
