@@ -9,6 +9,7 @@ test('commandMap exposes handleMessagePort', () => {
 test('commandMap exposes chat view event commands', async () => {
   const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
   expect(CommandMap.commandMap['ChatStorage.appendDebugEvent']).toBe(chatSessionStorage.appendChatDebugEvent)
+  expect(CommandMap.commandMap['ChatStorage.getDebugEvents']).toBe(chatSessionStorage.getDebugEvents)
   expect(CommandMap.commandMap['ChatStorage.listChatViewEvents']).toBe(chatSessionStorage.listChatViewEvents)
   expect(CommandMap.commandMap['ChatStorage.loadSelectedEvent']).toBe(chatSessionStorage.loadSelectedEventOld)
 })

@@ -299,12 +299,6 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
     return (events as readonly StoredChatViewEvent[]).map(toChatViewEvent)
   }
 
-  private listEventsInternal = async (): Promise<readonly ChatViewEvent[]> => {
-    const database = await this.openDatabase()
-    const events = await database.getAll(this.state.eventStoreName)
-    return (events as readonly StoredChatViewEvent[]).map(toChatViewEvent)
-  }
-
   private appendEvents = async (events: readonly ChatViewEvent[]): Promise<void> => {
     if (events.length === 0) {
       return
@@ -347,11 +341,8 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
     })
   }
 
-  async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {
-    if (sessionId) {
-      return this.getEventsBySessionId(sessionId)
-    }
-    return this.listEventsInternal()
+  async getEvents(sessionId: string): Promise<readonly ChatViewEvent[]> {
+    return this.getEventsBySessionId(sessionId)
   }
 
   async getSession(id: string): Promise<ChatSession | undefined> {

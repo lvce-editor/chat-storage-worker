@@ -11,10 +11,7 @@ export class InMemoryDebugEventStorage implements DebugEventStorage {
     this.events.length = 0
   }
 
-  async getEvents(sessionId?: string): Promise<readonly DebugEvent[]> {
-    if (!sessionId) {
-      return [...this.events]
-    }
+  async getEvents(sessionId: string): Promise<readonly DebugEvent[]> {
     return this.events.filter((event) => event.sessionId === sessionId)
   }
 }
