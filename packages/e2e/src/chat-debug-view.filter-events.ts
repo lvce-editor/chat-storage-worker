@@ -7,7 +7,8 @@ export const skip = 1
 export const test: Test = async ({ Command, expect, Locator }) => {
   // arrange
   await Command.execute('Main.openUri', 'chat-storage://e2e-session-filter')
-  await expect(Locator('.chatStorage')).toBeVisible()
+  const s = Locator('.chatStorage')
+  await expect(s).toBeVisible()
 
   const events = [
     {
