@@ -25,10 +25,7 @@ export interface ListChatViewEventsSimpleOptions {
   readonly sessionIdIndexName: string
 }
 
-export const listChatViewEventsDependencies = {
-  getEventsBySessionId: GetEventsBySessionId.getSimpleEventsBySessionId,
-  openDatabase: OpenDatabase.openDatabase,
-}
+
 
 const shouldUseLegacyFallback = (databaseName: string, databaseVersion: number, eventStoreName: string, sessionIdIndexName: string): boolean => {
   return (
@@ -46,14 +43,14 @@ const getEventsFromStore = async (
   sessionId: string,
   sessionIdIndexName: string,
 ): Promise<readonly ChatViewEventSimple[]> => {
-  const database = await listChatViewEventsDependencies.openDatabase(databaseName, databaseVersion)
+  const database = await OpenDatabase.openDatabase(databaseName, databaseVersion)
   try {
     if (!database.objectStoreNames.contains(eventStoreName)) {
       return []
     }
     const transaction = database.transaction(eventStoreName, 'readonly')
     const store = transaction.objectStore(eventStoreName)
-    return listChatViewEventsDependencies.getEventsBySessionId(store, sessionId, sessionIdIndexName)
+    return GetEventsBySessionId.getSimpleEventsBySessionId(store, sessionId, sessionIdIndexName)
   } finally {
     database.close()
   }
