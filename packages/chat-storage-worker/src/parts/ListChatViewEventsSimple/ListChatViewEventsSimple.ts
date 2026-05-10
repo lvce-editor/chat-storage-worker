@@ -25,8 +25,6 @@ export interface ListChatViewEventsSimpleOptions {
   readonly sessionIdIndexName: string
 }
 
-
-
 const shouldUseLegacyFallback = (databaseName: string, databaseVersion: number, eventStoreName: string, sessionIdIndexName: string): boolean => {
   return (
     databaseName === debugEventStorageDatabaseName &&

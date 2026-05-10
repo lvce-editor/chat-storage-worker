@@ -24,7 +24,6 @@ export interface LoadSelectedEventOptions {
   readonly type: string
 }
 
-
 const shouldUseLegacyFallback = (databaseName: string, databaseVersion: number, eventStoreName: string, sessionIdIndexName: string): boolean => {
   return (
     databaseName === debugEventStorageDatabaseName &&
