@@ -59,8 +59,11 @@ test('listChatViewEventsSimple reads from the configured database using an optio
   expect(result).toEqual({
     events: [
       {
+        duration: 0,
+        endTime: 25,
         eventId: 1,
         requestId: 'request-1',
+        startTime: 25,
         timestamp: 25,
         type: 'handle-input',
       },
@@ -116,7 +119,10 @@ test('listChatViewEventsSimple falls back to the legacy session event store when
   expect(result).toEqual({
     events: [
       {
+        duration: 0,
+        endTime: '2026-01-01T00:00:00.000Z',
         eventId: 1,
+        startTime: '2026-01-01T00:00:00.000Z',
         timestamp: '2026-01-01T00:00:00.000Z',
         type: 'handle-input',
       },
