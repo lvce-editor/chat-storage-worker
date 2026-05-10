@@ -5,7 +5,6 @@ export interface CreateSessionOptions {
   readonly timestamp: string
 }
 
-
 export const createSession = async (session: CreateSessionOptions): Promise<void> => {
   // TODO
   // 1. in chat-session table, insert the new entry
