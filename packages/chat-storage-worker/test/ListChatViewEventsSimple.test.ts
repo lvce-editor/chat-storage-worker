@@ -1,23 +1,33 @@
-import { expect, jest, test } from '@jest/globals'
+import { afterEach, expect, jest, test } from '@jest/globals'
 import type { ChatViewEventSimple } from '../src/parts/ChatViewEventSimple/ChatViewEventSimple.ts'
+import * as GetEventsBySessionId from '../src/parts/GetEventsBySessionId/GetEventsBySessionId.ts'
 import * as ListChatViewEventsSimple from '../src/parts/ListChatViewEventsSimple/ListChatViewEventsSimple.ts'
+import * as OpenDatabase from '../src/parts/OpenDatabase/OpenDatabase.ts'
 
-type OpenDatabase = typeof ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
-type Database = Awaited<ReturnType<OpenDatabase>>
-type GetEventsBySessionId = typeof ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
-type Store = Parameters<GetEventsBySessionId>[0]
+type Database = Awaited<ReturnType<typeof OpenDatabase.openDatabase>>
+type Store = Parameters<typeof GetEventsBySessionId.getSimpleEventsBySessionId>[0]
+type TestDatabase = {
+  readonly close: Database['close']
+  readonly objectStoreNames: Database['objectStoreNames']
+  readonly store: Store
+  readonly transaction: Database['transaction']
+}
+
+afterEach(() => {
+  jest.restoreAllMocks()
+})
 
 const createStore = (): Store => {
   return {
-    getAll: jest.fn(),
-    index: jest.fn(),
+    getAll: jest.fn() as unknown as Store['getAll'],
+    index: jest.fn() as unknown as Store['index'],
     indexNames: {
       contains: jest.fn(),
     } as unknown as Store['indexNames'],
   }
 }
 
-const createDatabase = (containsEventStore: boolean): Database & { readonly store: Store } => {
+const createDatabase = (containsEventStore: boolean): TestDatabase => {
   const store = createStore()
   return {
     close: jest.fn(),
@@ -27,13 +37,11 @@ const createDatabase = (containsEventStore: boolean): Database & { readonly stor
     store,
     transaction: jest.fn().mockReturnValue({
       objectStore: jest.fn().mockReturnValue(store),
-    }),
+    }) as unknown as Database['transaction'],
   }
 }
 
 test('listChatViewEventsSimple reads from the configured database using an options object', async () => {
-  const originalOpenDatabase = ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
-  const originalGetEventsBySessionId = ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
   const database = createDatabase(true)
   const events: readonly ChatViewEventSimple[] = [
     {
@@ -45,69 +53,51 @@ test('listChatViewEventsSimple reads from the configured database using an optio
       type: 'chat-message-user',
     },
   ]
-  const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
-  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>(async () => events)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock
+  const openDatabaseSpy = jest.spyOn(OpenDatabase, 'openDatabase').mockResolvedValue(database as unknown as Database)
+  const getEventsBySessionIdSpy = jest.spyOn(GetEventsBySessionId, 'getSimpleEventsBySessionId').mockResolvedValue(events)
 
-  try {
-    const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
-      databaseName: 'chat-storage-worker',
-      databaseVersion: 3,
-      eventStoreName: 'events',
-      sessionId: 'session-1',
-      sessionIdIndexName: 'sessionId',
-    })
+  const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
+    databaseName: 'chat-storage-worker',
+    databaseVersion: 3,
+    eventStoreName: 'events',
+    sessionId: 'session-1',
+    sessionIdIndexName: 'sessionId',
+  })
 
-    expect(openDatabaseMock).toHaveBeenCalledWith('chat-storage-worker', 3)
-    expect(getEventsBySessionIdMock.mock.calls[0][0]).toBe(database.store)
-    expect(getEventsBySessionIdMock.mock.calls[0][1]).toBe('session-1')
-    expect(getEventsBySessionIdMock.mock.calls[0][2]).toBe('sessionId')
-    expect(result).toEqual({
-      events,
-      type: 'success',
-    })
-    expect(database.close).toHaveBeenCalledTimes(1)
-  } finally {
-    ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = originalOpenDatabase
-    ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = originalGetEventsBySessionId
-  }
+  expect(openDatabaseSpy).toHaveBeenCalledWith('chat-storage-worker', 3)
+  expect(getEventsBySessionIdSpy.mock.calls[0][0]).toBe(database.store)
+  expect(getEventsBySessionIdSpy.mock.calls[0][1]).toBe('session-1')
+  expect(getEventsBySessionIdSpy.mock.calls[0][2]).toBe('sessionId')
+  expect(result).toEqual({
+    events,
+    type: 'success',
+  })
+  expect(database.close).toHaveBeenCalledTimes(1)
 })
 
 test('listChatViewEventsSimple returns an empty result when sessionId is missing from the options object', async () => {
-  const originalOpenDatabase = ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
-  const originalGetEventsBySessionId = ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
   const database = createDatabase(true)
-  const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
-  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>(async () => [])
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock
+  const openDatabaseSpy = jest.spyOn(OpenDatabase, 'openDatabase').mockResolvedValue(database as unknown as Database)
+  const getEventsBySessionIdSpy = jest.spyOn(GetEventsBySessionId, 'getSimpleEventsBySessionId').mockResolvedValue([])
 
-  try {
-    const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
-      databaseName: 'chat-storage-worker',
-      databaseVersion: 3,
-      eventStoreName: 'events',
-      sessionId: '',
-      sessionIdIndexName: 'sessionId',
-    })
+  const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
+    databaseName: 'chat-storage-worker',
+    databaseVersion: 3,
+    eventStoreName: 'events',
+    sessionId: '',
+    sessionIdIndexName: 'sessionId',
+  })
 
-    expect(result).toEqual({
-      events: [],
-      type: 'success',
-    })
-    expect(openDatabaseMock).not.toHaveBeenCalled()
-    expect(getEventsBySessionIdMock).not.toHaveBeenCalled()
-    expect(database.close).not.toHaveBeenCalled()
-  } finally {
-    ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = originalOpenDatabase
-    ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = originalGetEventsBySessionId
-  }
+  expect(result).toEqual({
+    events: [],
+    type: 'success',
+  })
+  expect(openDatabaseSpy).not.toHaveBeenCalled()
+  expect(getEventsBySessionIdSpy).not.toHaveBeenCalled()
+  expect(database.close).not.toHaveBeenCalled()
 })
 
 test('listChatViewEventsSimple falls back to the legacy session event store when the debug database has no events', async () => {
-  const originalOpenDatabase = ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase
-  const originalGetEventsBySessionId = ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId
   const debugDatabase = createDatabase(true)
   const legacyDatabase = createDatabase(true)
   const events: readonly ChatViewEventSimple[] = [
@@ -119,39 +109,35 @@ test('listChatViewEventsSimple falls back to the legacy session event store when
       value: 'hello',
     },
   ]
-  const openDatabaseMock = jest.fn<OpenDatabase>(async (databaseName: string) => {
+  const openDatabaseSpy = jest.spyOn(OpenDatabase, 'openDatabase').mockImplementation(async (databaseName: string) => {
     if (databaseName === 'lvce-chat-debug-events') {
-      return debugDatabase
+      return debugDatabase as unknown as Database
     }
-    return legacyDatabase
+    return legacyDatabase as unknown as Database
   })
-  const getEventsBySessionIdMock = jest.fn<GetEventsBySessionId>().mockResolvedValueOnce([]).mockResolvedValueOnce(events)
-  ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = openDatabaseMock
-  ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = getEventsBySessionIdMock
+  const getEventsBySessionIdSpy = jest
+    .spyOn(GetEventsBySessionId, 'getSimpleEventsBySessionId')
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce(events)
 
-  try {
-    const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
-      databaseName: 'lvce-chat-debug-events',
-      databaseVersion: 1,
-      eventStoreName: 'chat-debug-events',
-      sessionId: 'session-1',
-      sessionIdIndexName: 'sessionId',
-    })
+  const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
+    databaseName: 'lvce-chat-debug-events',
+    databaseVersion: 1,
+    eventStoreName: 'chat-debug-events',
+    sessionId: 'session-1',
+    sessionIdIndexName: 'sessionId',
+  })
 
-    expect(openDatabaseMock.mock.calls).toEqual([
-      ['lvce-chat-debug-events', 1],
-      ['lvce-chat-view-sessions', 2],
-    ])
-    expect(getEventsBySessionIdMock.mock.calls[0][0]).toBe(debugDatabase.store)
-    expect(getEventsBySessionIdMock.mock.calls[1][0]).toBe(legacyDatabase.store)
-    expect(result).toEqual({
-      events,
-      type: 'success',
-    })
-    expect(debugDatabase.close).toHaveBeenCalledTimes(1)
-    expect(legacyDatabase.close).toHaveBeenCalledTimes(1)
-  } finally {
-    ListChatViewEventsSimple.listChatViewEventsDependencies.openDatabase = originalOpenDatabase
-    ListChatViewEventsSimple.listChatViewEventsDependencies.getEventsBySessionId = originalGetEventsBySessionId
-  }
+  expect(openDatabaseSpy.mock.calls).toEqual([
+    ['lvce-chat-debug-events', 1],
+    ['lvce-chat-view-sessions', 2],
+  ])
+  expect(getEventsBySessionIdSpy.mock.calls[0][0]).toBe(debugDatabase.store)
+  expect(getEventsBySessionIdSpy.mock.calls[1][0]).toBe(legacyDatabase.store)
+  expect(result).toEqual({
+    events,
+    type: 'success',
+  })
+  expect(debugDatabase.close).toHaveBeenCalledTimes(1)
+  expect(legacyDatabase.close).toHaveBeenCalledTimes(1)
 })
