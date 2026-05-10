@@ -15,7 +15,7 @@ const createStore = (): Store => {
     indexNames: {
       contains: jest.fn(),
     } as unknown as Store['indexNames'],
-  } as unknown as Store
+  }
 }
 
 const createDatabase = (containsEventStore: boolean): Database & { readonly store: Store } => {
@@ -29,7 +29,7 @@ const createDatabase = (containsEventStore: boolean): Database & { readonly stor
     transaction: jest.fn().mockReturnValue({
       objectStore: jest.fn().mockReturnValue(store),
     }),
-  } as unknown as Database & { readonly store: Store }
+  }
 }
 
 test('loadSelectedEvent reads event details from the configured database using an options object', async () => {
