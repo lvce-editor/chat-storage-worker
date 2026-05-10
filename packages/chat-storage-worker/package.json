@@ -46,12 +46,12 @@
     }
   },
   "devDependencies": {
-    "@jest/globals": "^30.3.0",
+    "@jest/globals": "^30.4.1",
     "@lvce-editor/rpc": "^6.4.0",
     "@lvce-editor/rpc-registry": "^9.23.0",
     "fake-indexeddb": "^6.2.5",
     "idb": "^8.0.3",
-    "jest": "^30.3.0",
+    "jest": "^30.4.2",
     "ts-jest": "^29.4.9"
   }
 }
