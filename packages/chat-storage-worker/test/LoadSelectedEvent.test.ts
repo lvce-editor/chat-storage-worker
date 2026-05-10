@@ -1,150 +1,122 @@
-import { expect, jest, test } from '@jest/globals'
+import { afterEach, expect, test } from '@jest/globals'
+import { openDB } from 'idb'
+import type { ChatViewEvent } from '../src/parts/ChatViewEvent/ChatViewEvent.ts'
 import type { ChatViewEventSimple } from '../src/parts/ChatViewEventSimple/ChatViewEventSimple.ts'
+import {
+  chatSessionStorageDatabaseName,
+  chatSessionStorageDatabaseVersion,
+  chatSessionStorageEventStoreName,
+} from '../src/parts/ChatSessionStorageConfig/ChatSessionStorageConfig.ts'
+import {
+  debugEventStorageDatabaseName,
+  debugEventStorageDatabaseVersion,
+  debugEventStorageEventStoreName,
+  debugEventStorageSessionIdIndexName,
+} from '../src/parts/DebugEventStorageConfig/DebugEventStorageConfig.ts'
+import { IndexedDbChatSessionStorage } from '../src/parts/IndexedDbChatSessionStorage/IndexedDbChatSessionStorage.ts'
+import { IndexedDbDebugEventStorage } from '../src/parts/IndexedDbDebugEventStorage/IndexedDbDebugEventStorage.ts'
 import * as LoadSelectedEvent from '../src/parts/LoadSelectedEvent/LoadSelectedEvent.ts'
 
-type OpenDatabase = typeof LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
-type Database = Awaited<ReturnType<OpenDatabase>>
-type GetEventDetailsBySessionIdAndEventId = typeof LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
-type Store = Parameters<GetEventDetailsBySessionIdAndEventId>[0]
+let databaseId = 0
 
-const createStore = (): Store => {
-  return {
-    get: jest.fn(),
-    getAll: jest.fn(),
-    index: jest.fn(),
-    indexNames: {
-      contains: jest.fn(),
-    } as unknown as Store['indexNames'],
-  } as unknown as Store
+afterEach(() => {
+  return Promise.all([new IndexedDbDebugEventStorage().clear(), new IndexedDbChatSessionStorage().clear()])
+})
+
+const createDatabaseName = (prefix: string): string => {
+  databaseId++
+  return `chat-storage-worker-${prefix}-${databaseId}`
 }
 
-const createDatabase = (containsEventStore: boolean): Database & { readonly store: Store } => {
-  const store = createStore()
-  return {
-    close: jest.fn(),
-    objectStoreNames: {
-      contains: jest.fn().mockReturnValue(containsEventStore),
-    } as unknown as Database['objectStoreNames'],
-    store,
-    transaction: jest.fn().mockReturnValue({
-      objectStore: jest.fn().mockReturnValue(store),
-    }),
-  } as unknown as Database & { readonly store: Store }
+const createRawEvent = (event: Readonly<Record<string, unknown>>): ChatViewEvent => {
+  return event as unknown as ChatViewEvent
 }
 
 test('loadSelectedEvent reads event details from the configured database using an options object', async () => {
-  const originalOpenDatabase = LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
-  const originalGetEventDetailsBySessionIdAndEventId = LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
-  const database = createDatabase(true)
+  const databaseName = createDatabaseName('load-selected')
+  const storage = new IndexedDbDebugEventStorage({
+    databaseName,
+    databaseVersion: 1,
+    eventStoreName: 'events',
+    sessionIdIndexName: 'sessionId',
+  })
   const event: ChatViewEventSimple = {
-    eventId: 1,
+    ended: 20,
     sessionId: 'session-1',
+    started: 10,
     type: 'tool-execution',
   }
-  const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
-  const getEventDetailsBySessionIdAndEventIdMock = jest.fn<GetEventDetailsBySessionIdAndEventId>(async () => event)
-  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
-  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = getEventDetailsBySessionIdAndEventIdMock
+  await storage.clear()
+  await storage.appendEvent(event)
 
-  try {
-    const result = await LoadSelectedEvent.loadSelectedEvent({
-      databaseName: 'chat-storage-worker',
-      databaseVersion: 3,
-      eventId: 1,
-      eventStoreName: 'events',
-      sessionId: 'session-1',
-      sessionIdIndexName: 'sessionId',
-      type: 'tool-execution',
-    })
+  const result = await LoadSelectedEvent.loadSelectedEvent({
+    databaseName,
+    databaseVersion: 1,
+    eventId: 1,
+    eventStoreName: 'events',
+    sessionId: 'session-1',
+    sessionIdIndexName: 'sessionId',
+    type: 'tool-execution',
+  })
 
-    expect(openDatabaseMock).toHaveBeenCalledWith('chat-storage-worker', 3)
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][0]).toBe(database.store)
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][1]).toBe('session-1')
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][2]).toBe('sessionId')
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][3]).toBe(1)
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][4]).toBe('tool-execution')
-    expect(result).toEqual(event)
-    expect(database.close).toHaveBeenCalledTimes(1)
-  } finally {
-    LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = originalOpenDatabase
-    LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = originalGetEventDetailsBySessionIdAndEventId
-  }
+  expect(result).toEqual({
+    ...event,
+    eventId: 1,
+  })
 })
 
 test('loadSelectedEvent returns null when the configured event store does not exist', async () => {
-  const originalOpenDatabase = LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
-  const originalGetEventDetailsBySessionIdAndEventId = LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
-  const database = createDatabase(false)
-  const openDatabaseMock = jest.fn<OpenDatabase>(async () => database)
-  const getEventDetailsBySessionIdAndEventIdMock = jest.fn<GetEventDetailsBySessionIdAndEventId>(async () => undefined)
-  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
-  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = getEventDetailsBySessionIdAndEventIdMock
+  const databaseName = createDatabaseName('missing-store')
+  const database = await openDB(databaseName, 1)
+  database.close()
 
-  try {
-    const result = await LoadSelectedEvent.loadSelectedEvent({
-      databaseName: 'chat-storage-worker',
-      databaseVersion: 3,
-      eventId: 1,
-      eventStoreName: 'events',
-      sessionId: 'session-1',
-      sessionIdIndexName: 'sessionId',
-      type: 'tool-execution',
-    })
+  const result = await LoadSelectedEvent.loadSelectedEvent({
+    databaseName,
+    databaseVersion: 1,
+    eventId: 1,
+    eventStoreName: 'events',
+    sessionId: 'session-1',
+    sessionIdIndexName: 'sessionId',
+    type: 'tool-execution',
+  })
 
-    expect(result).toBeNull()
-    expect(getEventDetailsBySessionIdAndEventIdMock).not.toHaveBeenCalled()
-    expect(database.close).toHaveBeenCalledTimes(1)
-  } finally {
-    LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = originalOpenDatabase
-    LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = originalGetEventDetailsBySessionIdAndEventId
-  }
+  expect(result).toBeNull()
 })
 
 test('loadSelectedEvent falls back to the legacy session event store when the debug database has no event', async () => {
-  const originalOpenDatabase = LoadSelectedEvent.loadSelectedEventDependencies.openDatabase
-  const originalGetEventDetailsBySessionIdAndEventId = LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId
-  const debugDatabase = createDatabase(true)
-  const legacyDatabase = createDatabase(true)
-  const event: ChatViewEventSimple = {
-    eventId: 1,
-    sessionId: 'session-1',
-    type: 'tool-execution',
-  }
-  const openDatabaseMock = jest.fn<OpenDatabase>(async (databaseName: string) => {
-    if (databaseName === 'lvce-chat-debug-events') {
-      return debugDatabase
-    }
-    return legacyDatabase
+  const debugStorage = new IndexedDbDebugEventStorage({
+    databaseName: debugEventStorageDatabaseName,
+    databaseVersion: debugEventStorageDatabaseVersion,
+    eventStoreName: debugEventStorageEventStoreName,
+    sessionIdIndexName: debugEventStorageSessionIdIndexName,
   })
-  const getEventDetailsBySessionIdAndEventIdMock = jest
-    .fn<GetEventDetailsBySessionIdAndEventId>()
-    .mockResolvedValueOnce(undefined)
-    .mockResolvedValueOnce(event)
-  LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = openDatabaseMock
-  LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = getEventDetailsBySessionIdAndEventIdMock
+  const legacyStorage = new IndexedDbChatSessionStorage({
+    databaseName: chatSessionStorageDatabaseName,
+    databaseVersion: chatSessionStorageDatabaseVersion,
+    eventStoreName: chatSessionStorageEventStoreName,
+  })
+  const event = createRawEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-01-01T00:00:00.000Z',
+    type: 'handle-input',
+    value: 'hello',
+  })
+  await debugStorage.clear()
+  await legacyStorage.clear()
+  await legacyStorage.appendEvent(event)
 
-  try {
-    const result = await LoadSelectedEvent.loadSelectedEvent({
-      databaseName: 'lvce-chat-debug-events',
-      databaseVersion: 1,
-      eventId: 1,
-      eventStoreName: 'chat-debug-events',
-      sessionId: 'session-1',
-      sessionIdIndexName: 'sessionId',
-      type: 'tool-execution',
-    })
+  const result = await LoadSelectedEvent.loadSelectedEvent({
+    databaseName: debugEventStorageDatabaseName,
+    databaseVersion: debugEventStorageDatabaseVersion,
+    eventId: 1,
+    eventStoreName: debugEventStorageEventStoreName,
+    sessionId: 'session-1',
+    sessionIdIndexName: debugEventStorageSessionIdIndexName,
+    type: 'handle-input',
+  })
 
-    expect(openDatabaseMock.mock.calls).toEqual([
-      ['lvce-chat-debug-events', 1],
-      ['lvce-chat-view-sessions', 2],
-    ])
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[0][0]).toBe(debugDatabase.store)
-    expect(getEventDetailsBySessionIdAndEventIdMock.mock.calls[1][0]).toBe(legacyDatabase.store)
-    expect(result).toEqual(event)
-    expect(debugDatabase.close).toHaveBeenCalledTimes(1)
-    expect(legacyDatabase.close).toHaveBeenCalledTimes(1)
-  } finally {
-    LoadSelectedEvent.loadSelectedEventDependencies.openDatabase = originalOpenDatabase
-    LoadSelectedEvent.loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId = originalGetEventDetailsBySessionIdAndEventId
-  }
+  expect(result).toEqual({
+    ...event,
+    eventId: 1,
+  })
 })

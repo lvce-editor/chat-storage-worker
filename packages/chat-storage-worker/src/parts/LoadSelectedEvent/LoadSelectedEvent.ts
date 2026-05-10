@@ -24,11 +24,6 @@ export interface LoadSelectedEventOptions {
   readonly type: string
 }
 
-export const loadSelectedEventDependencies = {
-  getEventDetailsBySessionIdAndEventId: GetEventDetailsBySessionIdAndEventId.getEventDetailsBySessionIdAndEventId,
-  openDatabase: OpenDatabase.openDatabase,
-}
-
 const shouldUseLegacyFallback = (databaseName: string, databaseVersion: number, eventStoreName: string, sessionIdIndexName: string): boolean => {
   return (
     databaseName === debugEventStorageDatabaseName &&
@@ -47,14 +42,14 @@ const loadFromStore = async (
   sessionIdIndexName: string,
   type: string,
 ): Promise<ChatViewEventSimple | null> => {
-  const database = await loadSelectedEventDependencies.openDatabase(databaseName, databaseVersion)
+  const database = await OpenDatabase.openDatabase(databaseName, databaseVersion)
   try {
     if (!database.objectStoreNames.contains(eventStoreName)) {
       return null
     }
     const transaction = database.transaction(eventStoreName, 'readonly')
     const store = transaction.objectStore(eventStoreName)
-    const event = await loadSelectedEventDependencies.getEventDetailsBySessionIdAndEventId(store, sessionId, sessionIdIndexName, eventId, type)
+    const event = await GetEventDetailsBySessionIdAndEventId.getEventDetailsBySessionIdAndEventId(store, sessionId, sessionIdIndexName, eventId, type)
     return event ?? null
   } finally {
     database.close()
