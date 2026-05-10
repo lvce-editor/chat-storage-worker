@@ -15,6 +15,7 @@ import {
   waitForSessionUpdates,
 } from '../ChatSessionStorage/ChatSessionStorage.ts'
 import { createSession } from '../CreateSession/CreateSession.ts'
+import { getMessages } from '../GetMessages/GetMessages.ts'
 import { handleMessagePort } from '../HandleMessagePort/HandleMessagePort.ts'
 import { listChatViewEventsSimple } from '../ListChatViewEventsSimple/ListChatViewEventsSimple.ts'
 import { loadSelectedEvent } from '../LoadSelectedEvent/LoadSelectedEvent.ts'
@@ -28,6 +29,7 @@ export const commandMap = {
   'ChatStorage.createSession': createSession,
   'ChatStorage.deleteSession': deleteChatSession,
   'ChatStorage.getEvents': getChatViewEvents,
+  'ChatStorage.getMessages': getMessages,
   'ChatStorage.getSession': getChatSession,
   'ChatStorage.listChatViewEvents': listChatViewEvents,
   'ChatStorage.listChatViewEventsSimple': listChatViewEventsSimple,
