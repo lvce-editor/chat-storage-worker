@@ -20,6 +20,6 @@ export const appendChatDebugEvent = async (event: DebugEvent): Promise<void> => 
     await storage.appendEvent(event as ChatViewEvent)
   }
   if (event.sessionId) {
-    notifySessionListeners(event.sessionId)
+    await notifySessionListeners(event.sessionId)
   }
 }

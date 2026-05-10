@@ -3,5 +3,5 @@ import { notifyAllSessionListeners } from '../NotifyAllSessionListeners/NotifyAl
 
 export const clearChatSessions = async (): Promise<void> => {
   await getChatSessionStorage().clear()
-  notifyAllSessionListeners()
+  await notifyAllSessionListeners()
 }

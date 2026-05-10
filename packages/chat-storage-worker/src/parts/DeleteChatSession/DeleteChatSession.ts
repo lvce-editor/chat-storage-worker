@@ -3,5 +3,5 @@ import { notifySessionListeners } from '../NotifySessionListeners/NotifySessionL
 
 export const deleteChatSession = async (id: string): Promise<void> => {
   await getChatSessionStorage().deleteSession(id)
-  notifySessionListeners(id)
+  await notifySessionListeners(id)
 }
