@@ -18,7 +18,6 @@ export const getSessionListeners = (): Map<string, SessionListener> => {
   return sessionListeners
 }
 
-
 export const resetChatSessionStorageState = (): void => {
   chatSessionStorage = createInMemoryStorage()
   sessionListeners.clear()
