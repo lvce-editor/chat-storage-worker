@@ -2,6 +2,8 @@ import type { ChatSessionStorage, SessionListener } from '../ChatSessionStorageT
 import { createDefaultStorage, createInMemoryStorage } from '../CreateDefaultStorage/CreateDefaultStorage.ts'
 
 let chatSessionStorage: Readonly<ChatSessionStorage> = createDefaultStorage()
+
+// TODO should store it as an array of listeners per sessionId
 const sessionListeners = new Map<string, SessionListener>()
 
 export const getChatSessionStorage = (): Readonly<ChatSessionStorage> => {
@@ -15,6 +17,7 @@ export const setChatSessionStorageValue = (storage: Readonly<ChatSessionStorage>
 export const getSessionListeners = (): Map<string, SessionListener> => {
   return sessionListeners
 }
+
 
 export const resetChatSessionStorageState = (): void => {
   chatSessionStorage = createInMemoryStorage()

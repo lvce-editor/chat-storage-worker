@@ -1,8 +1,8 @@
 import { getSessionListeners } from '../ChatSessionStorageState/ChatSessionStorageState.ts'
 import { notifySessionListener } from '../NotifySessionListener/NotifySessionListener.ts'
 
-export const notifyAllSessionListeners = (): void => {
+export const notifyAllSessionListeners = async (): Promise<void> => {
   for (const listener of getSessionListeners().values()) {
-    notifySessionListener(listener)
+    await notifySessionListener(listener)
   }
 }

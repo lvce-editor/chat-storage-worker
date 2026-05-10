@@ -4,5 +4,5 @@ import { notifySessionListeners } from '../NotifySessionListeners/NotifySessionL
 
 export const appendChatViewEvent = async (event: ChatViewEvent): Promise<void> => {
   await getChatSessionStorage().appendEvent(event)
-  notifySessionListeners(event.sessionId)
+  await notifySessionListeners(event.sessionId)
 }
