@@ -6,7 +6,6 @@ import {
   chatSessionStorageDatabaseName,
   chatSessionStorageDatabaseVersion,
   chatSessionStorageEventStoreName,
-  chatSessionStorageSessionIdIndexName,
 } from '../src/parts/ChatSessionStorageConfig/ChatSessionStorageConfig.ts'
 import {
   debugEventStorageDatabaseName,

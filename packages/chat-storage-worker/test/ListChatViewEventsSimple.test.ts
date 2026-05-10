@@ -1,10 +1,8 @@
 import { afterEach, expect, test } from '@jest/globals'
-import type { ChatViewEventSimple } from '../src/parts/ChatViewEventSimple/ChatViewEventSimple.ts'
 import {
   chatSessionStorageDatabaseName,
   chatSessionStorageDatabaseVersion,
   chatSessionStorageEventStoreName,
-  chatSessionStorageSessionIdIndexName,
 } from '../src/parts/ChatSessionStorageConfig/ChatSessionStorageConfig.ts'
 import {
   debugEventStorageDatabaseName,
@@ -101,10 +99,10 @@ test('listChatViewEventsSimple falls back to the legacy session event store when
   await debugStorage.clear()
   await legacyStorage.clear()
   await legacyStorage.appendEvent({
-      sessionId: 'session-1',
-      timestamp: 25,
-      type: 'handle-input',
-      value: 'hello',
+    sessionId: 'session-1',
+    timestamp: '2026-01-01T00:00:00.000Z',
+    type: 'handle-input',
+    value: 'hello',
   })
 
   const result = await ListChatViewEventsSimple.listChatViewEventsSimple({
@@ -119,7 +117,7 @@ test('listChatViewEventsSimple falls back to the legacy session event store when
     events: [
       {
         eventId: 1,
-        timestamp: 25,
+        timestamp: '2026-01-01T00:00:00.000Z',
         type: 'handle-input',
       },
     ],
