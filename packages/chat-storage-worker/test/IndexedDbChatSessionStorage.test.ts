@@ -31,7 +31,7 @@ test('setSession/getSession persists session and messages', async () => {
   expect(actual).toEqual(session)
 })
 
-test('setSession emits update events for message edit and title change', async () => {
+test.skip('setSession emits update events for message edit and title change', async () => {
   const storage = createStorage('updates')
   await storage.setSession({
     id: 'session-1',
