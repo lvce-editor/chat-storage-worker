@@ -218,6 +218,9 @@ const applyReplayEvent = (state: ReplayState, event: ChatViewEvent): ReplayState
 }
 
 const replaySession = (id: string, summary: SessionSummary | undefined, events: readonly ChatViewEvent[]): ChatSession | undefined => {
+  // TODO simplify this maybe. store session info
+  // as it should be displayed in list
+  // e.g. id, title, timestamp
   let state: ReplayState = {
     deleted: false,
     messages: summary?.messages ? [...summary.messages] : [],
@@ -229,7 +232,7 @@ const replaySession = (id: string, summary: SessionSummary | undefined, events: 
     }
     state = applyReplayEvent(state, event)
   }
-  if (state.deleted || !state.title) {
+  if (state.deleted) {
     return undefined
   }
   return {
