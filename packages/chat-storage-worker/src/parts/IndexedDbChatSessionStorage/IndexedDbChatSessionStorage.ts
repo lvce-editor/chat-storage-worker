@@ -364,16 +364,11 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
 
   async listSessions(): Promise<readonly ChatSession[]> {
     const summaries = await this.listSummaries()
-    console.log({ summaries })
     const sessions: ChatSession[] = []
     for (const summary of summaries) {
       const events = await this.getEventsBySessionId(summary.id)
       const session = replaySession(summary.id, summary, events)
       if (!session) {
-        console.log('ctd', {
-          events,
-          session,
-        })
         continue
       }
       sessions.push(session)
