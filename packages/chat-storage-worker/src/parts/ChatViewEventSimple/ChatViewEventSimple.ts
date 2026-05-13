@@ -7,6 +7,7 @@ export interface ChatViewEventSimple {
   readonly [key: string]: unknown
   readonly requestId?: string
   readonly sessionId?: string
+  readonly size?: number
   readonly started?: number | string
   readonly startTime?: number | string
   readonly timestamp?: number | string
