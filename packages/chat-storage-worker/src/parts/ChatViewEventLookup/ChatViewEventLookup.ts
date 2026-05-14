@@ -1,4 +1,5 @@
 import type { ChatViewEvent } from '../ChatViewEvent/ChatViewEvent.ts'
+import { getSize } from '../GetLightweightEvent/GetLightweightEvent.ts'
 import { filterDebugChatViewEvents } from '../IsRequiredChatViewEvent/IsRequiredChatViewEvent.ts'
 
 export interface ChatViewEventInfo {
@@ -12,6 +13,7 @@ export interface ChatViewEventSummary {
   readonly endTime?: number | string
   readonly eventId: number
   readonly requestId?: string
+  readonly size?: number | undefined
   readonly startTime?: number | string
   readonly timestamp?: number | string
   readonly type: string
@@ -135,6 +137,7 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
   const startTime = getStartTime(event)
   const endTime = getEndTime(event)
   const { requestId, timestamp } = event
+  const size = getSize(event)
   return {
     duration: getDuration(event),
     ...(endTime === undefined ? {} : { endTime }),
@@ -142,6 +145,7 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
     ...(typeof requestId === 'string' ? { requestId } : {}),
     ...(startTime === undefined ? {} : { startTime }),
     ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
+    size,
     type: event.type,
   }
 }
