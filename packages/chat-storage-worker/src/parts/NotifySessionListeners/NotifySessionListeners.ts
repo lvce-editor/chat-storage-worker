@@ -3,7 +3,5 @@ import { notifySessionListener } from '../NotifySessionListener/NotifySessionLis
 
 export const notifySessionListeners = async (sessionId: string): Promise<void> => {
   const matching = [...getSessionListeners().values()].filter((listener) => listener.sessionId === sessionId)
-  for (const listener of matching) {
-    await notifySessionListener(listener)
-  }
+  await Promise.all(matching.map(notifySessionListener))
 }
