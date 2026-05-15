@@ -4,7 +4,7 @@ import { getEndTime } from '../GetEndTime/GetEndTime.ts'
 import { getStartTime } from '../GetStartTime/GetStartTime.ts'
 import { isTimeValue } from '../IsTimeValue/IsTimeValue.ts'
 
-const getSize = (event: ChatViewEventSimple): number | undefined => {
+export const getSize = (event: ChatViewEventSimple): number | undefined => {
   if (typeof event.size === 'number') {
     return event.size
   }
