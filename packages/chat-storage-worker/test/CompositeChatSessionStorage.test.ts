@@ -20,6 +20,7 @@ const createDebugEventStorage = (): DebugEventStorage => {
   return {
     appendEvent: jest.fn(async () => {}),
     clear: jest.fn(async () => {}),
+    deleteSession: jest.fn(async (_sessionId: string) => {}),
     getEvents: jest.fn(async (_sessionId?: string) => []),
   }
 }
@@ -98,4 +99,17 @@ test('appendDebugEvent writes directly to debug storage', async () => {
     type: 'ai-request',
   })
   expect(sessionStorage.appendEvent).not.toHaveBeenCalled()
+})
+
+test('deleteSession removes session and debug events', async () => {
+  const sessionStorage = createSessionStorage()
+  const debugEventStorage = createDebugEventStorage()
+  const storage = new CompositeChatSessionStorage(sessionStorage, debugEventStorage)
+
+  await storage.deleteSession('session-1')
+
+  expect(sessionStorage.deleteSession).toHaveBeenCalledTimes(1)
+  expect(sessionStorage.deleteSession).toHaveBeenCalledWith('session-1')
+  expect(debugEventStorage.deleteSession).toHaveBeenCalledTimes(1)
+  expect(debugEventStorage.deleteSession).toHaveBeenCalledWith('session-1')
 })

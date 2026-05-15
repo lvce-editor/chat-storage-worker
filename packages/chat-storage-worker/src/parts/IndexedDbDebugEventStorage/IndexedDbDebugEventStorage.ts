@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/prefer-readonly-parameter-types */
+/* cspell:ignore IDBP */
 import type { IDBPDatabase } from 'idb'
 import { openDB } from 'idb'
 import type { DebugEvent, DebugEventStorage } from '../DebugEventStorageTypes/DebugEventStorageTypes.ts'
@@ -78,6 +79,34 @@ export class IndexedDbDebugEventStorage implements DebugEventStorage {
   async clear(): Promise<void> {
     const database = await this.openDatabase()
     await database.clear(this.state.eventStoreName)
+  }
+
+  private deleteSessionGetKeys = async (database: IDBPDatabase, sessionId: string): Promise<readonly IDBValidKey[]> => {
+    const readTransaction = database.transaction(this.state.eventStoreName, 'readonly')
+    const readEventStore = readTransaction.objectStore(this.state.eventStoreName)
+    const readEventIndex = readEventStore.index(this.state.sessionIdIndexName)
+    const keys = await readEventIndex.getAllKeys(IDBKeyRange.only(sessionId))
+    await readTransaction.done
+    return keys
+  }
+
+  private deleteSessionRemoveEntries = async (database: IDBPDatabase, keys: readonly IDBValidKey[]): Promise<void> => {
+    if (keys.length === 0) {
+      return
+    }
+    const writeTransaction = database.transaction(this.state.eventStoreName, 'readwrite')
+    const writeEventStore = writeTransaction.objectStore(this.state.eventStoreName)
+    const deletePromises = []
+    for (const key of keys) {
+      deletePromises.push(writeEventStore.delete(key))
+    }
+    await Promise.all([...deletePromises, writeTransaction.done])
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    const database = await this.openDatabase()
+    const keys = await this.deleteSessionGetKeys(database, sessionId)
+    await this.deleteSessionRemoveEntries(database, keys)
   }
 
   async getEvents(sessionId?: string): Promise<readonly DebugEvent[]> {

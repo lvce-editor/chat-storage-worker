@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/prefer-readonly-parameter-types */
+/* cspell:ignore IDBP */
 import type { IDBPDatabase } from 'idb'
 import { openDB } from 'idb'
 import type { ChatSession } from '../ChatSession/ChatSession.ts'
@@ -221,6 +222,9 @@ const replaySession = (id: string, summary: SessionSummary | undefined, events: 
   // TODO simplify this maybe. store session info
   // as it should be displayed in list
   // e.g. id, title, timestamp
+  if (!summary && events.length === 0) {
+    return undefined
+  }
   let state: ReplayState = {
     deleted: false,
     messages: summary?.messages ? [...summary.messages] : [],
@@ -342,12 +346,30 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
     await transaction.done
   }
 
+  private deleteSessionGetKeys = async (database: IDBPDatabase, id: string): Promise<readonly IDBValidKey[]> => {
+    const readTransaction = database.transaction(this.state.eventStoreName, 'readonly')
+    const readEventStore = readTransaction.objectStore(this.state.eventStoreName)
+    const readEventIndex = readEventStore.index('sessionId')
+    const eventKeys = await readEventIndex.getAllKeys(IDBKeyRange.only(id))
+    await readTransaction.done
+    return eventKeys
+  }
+
+  private deleteSessionRemoveEntries = async (database: IDBPDatabase, id: string, eventKeys: readonly IDBValidKey[]): Promise<void> => {
+    const writeTransaction = database.transaction([this.state.storeName, this.state.eventStoreName], 'readwrite')
+    const summaryStore = writeTransaction.objectStore(this.state.storeName)
+    const eventStore = writeTransaction.objectStore(this.state.eventStoreName)
+    const deletePromises = [summaryStore.delete(id)]
+    for (const key of eventKeys) {
+      deletePromises.push(eventStore.delete(key))
+    }
+    await Promise.all([...deletePromises, writeTransaction.done])
+  }
+
   async deleteSession(id: string): Promise<void> {
-    await this.appendEvent({
-      sessionId: id,
-      timestamp: now(),
-      type: 'chat-session-deleted',
-    })
+    const database = await this.openDatabase()
+    const eventKeys = await this.deleteSessionGetKeys(database, id)
+    await this.deleteSessionRemoveEntries(database, id, eventKeys)
   }
 
   async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {

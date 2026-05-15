@@ -28,7 +28,7 @@ export class CompositeChatSessionStorage implements ChatSessionStorage {
   }
 
   async deleteSession(id: string): Promise<void> {
-    await this.sessionStorage.deleteSession(id)
+    await Promise.all([this.sessionStorage.deleteSession(id), this.debugEventStorage.deleteSession(id)])
   }
 
   async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {
