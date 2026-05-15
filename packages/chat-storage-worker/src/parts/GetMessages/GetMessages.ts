@@ -29,7 +29,7 @@ export const getMessages = async (sessionId: string): Promise<readonly ChatViewE
   const t = database.transaction(chatSessionStorageEventStoreName, 'readonly')
   const store = t.objectStore(chatSessionStorageEventStoreName)
   const index = store.index(chatSessionStorageSessionIdIndexName)
-  const events = await index.getAll()
+  const events = await index.getAll(sessionId)
   const messageEvents = events.filter(isMessageEvent)
   const messages = messageEvents.map(toMessage)
   return messages
