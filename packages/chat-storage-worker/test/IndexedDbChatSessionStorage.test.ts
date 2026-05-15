@@ -64,11 +64,19 @@ test('deleteSession removes session from list and lookup', async () => {
     messages: [],
     title: 'To be deleted',
   })
+  await storage.appendEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-01-01T00:00:01.000Z',
+    type: 'handle-input',
+    value: 'temporary',
+  })
   await storage.deleteSession('session-1')
   const session = await storage.getSession('session-1')
   const sessions = await storage.listSessions()
+  const events = await storage.getEvents('session-1')
   expect(session).toBeUndefined()
   expect(sessions).toEqual([])
+  expect(events).toEqual([])
 })
 
 test('clear removes sessions and events', async () => {

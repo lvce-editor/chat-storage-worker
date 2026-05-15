@@ -80,6 +80,18 @@ export class IndexedDbDebugEventStorage implements DebugEventStorage {
     await database.clear(this.state.eventStoreName)
   }
 
+  async deleteSession(sessionId: string): Promise<void> {
+    const database = await this.openDatabase()
+    const transaction = database.transaction(this.state.eventStoreName, 'readwrite')
+    const eventStore = transaction.objectStore(this.state.eventStoreName)
+    const eventIndex = eventStore.index(this.state.sessionIdIndexName)
+    const keys = await eventIndex.getAllKeys(IDBKeyRange.only(sessionId))
+    for (const key of keys) {
+      await eventStore.delete(key)
+    }
+    await transaction.done
+  }
+
   async getEvents(sessionId?: string): Promise<readonly DebugEvent[]> {
     const database = await this.openDatabase()
     if (sessionId) {

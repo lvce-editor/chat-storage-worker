@@ -343,11 +343,17 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
   }
 
   async deleteSession(id: string): Promise<void> {
-    await this.appendEvent({
-      sessionId: id,
-      timestamp: now(),
-      type: 'chat-session-deleted',
-    })
+    const database = await this.openDatabase()
+    const transaction = database.transaction([this.state.storeName, this.state.eventStoreName], 'readwrite')
+    const summaryStore = transaction.objectStore(this.state.storeName)
+    const eventStore = transaction.objectStore(this.state.eventStoreName)
+    const eventIndex = eventStore.index('sessionId')
+    const eventKeys = await eventIndex.getAllKeys(IDBKeyRange.only(id))
+    await summaryStore.delete(id)
+    for (const key of eventKeys) {
+      await eventStore.delete(key)
+    }
+    await transaction.done
   }
 
   async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {

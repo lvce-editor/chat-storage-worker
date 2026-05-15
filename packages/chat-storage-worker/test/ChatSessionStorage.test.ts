@@ -8,6 +8,7 @@ import {
   appendChatViewEvent,
   clearChatSessions,
   deleteChatSession,
+  getChatViewEvents,
   saveChatSession,
   subscribeSessionUpdates,
   unsubscribeSessionUpdates,
@@ -154,6 +155,35 @@ test('deleteChatSession should notify subscribed listeners', async () => {
     ['handleChatStorageUpdate', 3, 'session-1'],
     ['handleChatStorageUpdate', 3, 'session-1'],
   ])
+})
+
+test('deleteChatSession removes matching session, chat-view events, and debug events', async () => {
+  await saveChatSession(createSession('session-1', 'Session 1'))
+
+  await appendChatViewEvent({
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:05.000Z',
+    type: 'handle-input',
+    value: 'to be deleted',
+  })
+
+  await appendChatDebugEvent({
+    requestId: 'request-2',
+    sessionId: 'session-1',
+    timestamp: '2026-04-19T00:00:06.000Z',
+    type: 'ai-request',
+  })
+
+  await deleteChatSession('session-1')
+
+  const chatSessionStorage = await import('../src/parts/ChatSessionStorage/ChatSessionStorage.ts')
+  const session = await chatSessionStorage.getChatSession('session-1')
+  const sessions = await chatSessionStorage.listChatSessions()
+  const events = await getChatViewEvents('session-1')
+
+  expect(session).toBeUndefined()
+  expect(sessions).toEqual([])
+  expect(events).toEqual([])
 })
 
 test('unsubscribeSessionUpdates should stop notifications for the listener', async () => {

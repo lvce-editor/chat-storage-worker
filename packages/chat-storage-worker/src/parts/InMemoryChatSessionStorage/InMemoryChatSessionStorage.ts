@@ -221,11 +221,12 @@ export class InMemoryChatSessionStorage implements ChatSessionStorage {
   }
 
   async deleteSession(id: string): Promise<void> {
-    await this.appendEvent({
-      sessionId: id,
-      timestamp: now(),
-      type: 'chat-session-deleted',
-    })
+    this.summaries.delete(id)
+    for (let index = this.events.length - 1; index >= 0; index -= 1) {
+      if (this.events[index].sessionId === id) {
+        this.events.splice(index, 1)
+      }
+    }
   }
 
   async getEvents(sessionId?: string): Promise<readonly ChatViewEvent[]> {
