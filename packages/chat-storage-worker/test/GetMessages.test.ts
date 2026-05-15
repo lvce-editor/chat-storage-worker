@@ -96,6 +96,5 @@ test('getMessages uses sessionId index and returns only matching message events'
     ])
   } finally {
     database.close()
-    await deleteDatabase(chatSessionStorageDatabaseName)
   }
 })
