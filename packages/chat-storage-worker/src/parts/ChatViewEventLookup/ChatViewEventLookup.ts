@@ -143,9 +143,9 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
     ...(endTime === undefined ? {} : { endTime }),
     eventId: typeof event.eventId === 'number' ? event.eventId : fallbackEventId,
     ...(typeof requestId === 'string' ? { requestId } : {}),
+    ...(typeof size === 'number' ? { size } : {}),
     ...(startTime === undefined ? {} : { startTime }),
     ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
-    size,
     type: event.type,
   }
 }
