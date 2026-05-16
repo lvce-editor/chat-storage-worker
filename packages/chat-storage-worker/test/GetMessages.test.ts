@@ -1,13 +1,29 @@
 import { afterEach, expect, jest, test } from '@jest/globals'
 import { openDB } from 'idb'
 import type { ChatMessage } from '../src/parts/ChatMessage/ChatMessage.ts'
+import { resetChatSessionStorage, setPartialMessage } from '../src/parts/ChatSessionStorage/ChatSessionStorage.ts'
 import {
   chatSessionStorageDatabaseName,
   chatSessionStorageDatabaseVersion,
   chatSessionStorageEventStoreName,
   chatSessionStorageSessionIdIndexName,
+  chatSessionStorageStoreName,
 } from '../src/parts/ChatSessionStorageConfig/ChatSessionStorageConfig.ts'
 import { getMessages } from '../src/parts/GetMessages/GetMessages.ts'
+
+const upgradeDatabase = (nextDatabase: any): void => {
+  if (!nextDatabase.objectStoreNames.contains(chatSessionStorageStoreName)) {
+    nextDatabase.createObjectStore(chatSessionStorageStoreName, {
+      keyPath: 'id',
+    })
+  }
+  if (!nextDatabase.objectStoreNames.contains(chatSessionStorageEventStoreName)) {
+    const eventStore = nextDatabase.createObjectStore(chatSessionStorageEventStoreName, {
+      autoIncrement: true,
+    })
+    eventStore.createIndex(chatSessionStorageSessionIdIndexName, 'sessionId')
+  }
+}
 
 const createMessage = (id: string, text: string): ChatMessage => {
   return {
@@ -35,18 +51,13 @@ const deleteDatabase = async (databaseName: string): Promise<void> => {
 
 afterEach(() => {
   jest.restoreAllMocks()
+  resetChatSessionStorage()
 })
 
 test('getMessages uses sessionId index and returns only matching message events', async () => {
   await deleteDatabase(chatSessionStorageDatabaseName)
   const database = await openDB(chatSessionStorageDatabaseName, chatSessionStorageDatabaseVersion, {
-    // eslint-disable-next-line @typescript-eslint/prefer-readonly-parameter-types
-    upgrade(nextDatabase) {
-      const eventStore = nextDatabase.createObjectStore(chatSessionStorageEventStoreName, {
-        autoIncrement: true,
-      })
-      eventStore.createIndex(chatSessionStorageSessionIdIndexName, 'sessionId')
-    },
+    upgrade: upgradeDatabase,
   })
   const sessionId = 'session-2'
   try {
@@ -91,6 +102,65 @@ test('getMessages uses sessionId index and returns only matching message events'
       {
         message: createMessage('m2', 'second'),
         timestamp: '2026-01-01T00:00:03.000Z',
+        type: 'chat-message-added',
+      },
+    ])
+  } finally {
+    database.close()
+  }
+})
+
+test('getMessages returns the active partial assistant message for the session', async () => {
+  await deleteDatabase(chatSessionStorageDatabaseName)
+  const database = await openDB(chatSessionStorageDatabaseName, chatSessionStorageDatabaseVersion, {
+    upgrade: upgradeDatabase,
+  })
+  const sessionId = 'session-stream'
+  try {
+    await database.add(chatSessionStorageEventStoreName, {
+      message: createMessage('m1', 'stored'),
+      sessionId,
+      timestamp: '2026-01-01T00:00:01.000Z',
+      type: 'chat-message-added',
+    })
+    await setPartialMessage({
+      message: {
+        id: 'm2',
+        partial: true,
+        role: 'assistant',
+        text: 'partial answer',
+        time: '2026-01-01T00:00:02.000Z',
+      },
+      sessionId,
+    })
+    await setPartialMessage({
+      message: {
+        id: 'm3',
+        partial: true,
+        role: 'assistant',
+        text: 'other session',
+        time: '2026-01-01T00:00:03.000Z',
+      },
+      sessionId: 'session-other',
+    })
+
+    const result = await getMessages(sessionId)
+
+    expect(result).toEqual([
+      {
+        message: createMessage('m1', 'stored'),
+        timestamp: '2026-01-01T00:00:01.000Z',
+        type: 'chat-message-added',
+      },
+      {
+        message: {
+          id: 'm2',
+          partial: true,
+          role: 'assistant',
+          text: 'partial answer',
+          time: '2026-01-01T00:00:02.000Z',
+        },
+        timestamp: '2026-01-01T00:00:02.000Z',
         type: 'chat-message-added',
       },
     ])

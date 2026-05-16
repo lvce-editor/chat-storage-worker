@@ -6,10 +6,13 @@ import type { ChatViewEvent } from '../src/parts/ChatViewEvent/ChatViewEvent.ts'
 import {
   appendChatDebugEvent,
   appendChatViewEvent,
+  clearPartialMessage,
   clearChatSessions,
   deleteChatSession,
   getChatViewEvents,
+  getMessages,
   saveChatSession,
+  setPartialMessage,
   subscribeSessionUpdates,
   unsubscribeSessionUpdates,
 } from '../src/parts/ChatSessionStorage/ChatSessionStorage.ts'
@@ -91,6 +94,66 @@ test('appendChatDebugEvent should notify subscribed listeners for the session', 
   })
 
   expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 6, 'session-1']])
+})
+
+test('setPartialMessage should notify subscribed listeners for the session', async () => {
+  const mockRpc = createMockRpc()
+  RpcRegistry.set(RpcId.RendererWorker, mockRpc)
+  subscribeSessionUpdates({
+    rpcId: RpcId.RendererWorker,
+    sessionId: 'session-1',
+    type: 'session',
+    uid: 12,
+  })
+
+  await setPartialMessage({
+    message: {
+      id: 'partial-1',
+      partial: true,
+      role: 'assistant',
+      text: 'streaming',
+      time: '2026-04-19T00:00:01.000Z',
+    },
+    sessionId: 'session-1',
+  })
+
+  expect(mockRpc.invocations).toEqual([['handleChatStorageUpdate', 12, 'session-1']])
+})
+
+test('deleteChatSession should clear transient partial messages for the deleted session', async () => {
+  await setPartialMessage({
+    message: {
+      id: 'partial-2',
+      partial: true,
+      role: 'assistant',
+      text: 'to be removed',
+      time: '2026-04-19T00:00:01.000Z',
+    },
+    sessionId: 'session-delete',
+  })
+
+  await deleteChatSession('session-delete')
+
+  const messages = await getMessages('session-delete')
+  expect(messages).toEqual([])
+})
+
+test('clearPartialMessage should remove the transient partial message for the session', async () => {
+  await setPartialMessage({
+    message: {
+      id: 'partial-3',
+      partial: true,
+      role: 'assistant',
+      text: 'clear me',
+      time: '2026-04-19T00:00:01.000Z',
+    },
+    sessionId: 'session-clear-partial',
+  })
+
+  await clearPartialMessage('session-clear-partial')
+
+  const messages = await getMessages('session-clear-partial')
+  expect(messages).toEqual([])
 })
 
 test('subscribeSessionUpdates should replace an existing listener with the same rpcId and uid', async () => {
