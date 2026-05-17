@@ -408,6 +408,7 @@ export class IndexedDbChatSessionStorage implements ChatSessionStorage {
       const summaryStore = transaction.objectStore(this.state.storeName)
       await summaryStore.put({
         id: session.id,
+        timestamp: session.timestamp,
         title: session.title,
       })
       await transaction.done
