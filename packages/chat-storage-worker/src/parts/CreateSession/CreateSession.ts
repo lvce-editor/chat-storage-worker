@@ -3,6 +3,7 @@ import { getChatSessionStorage } from '../ChatSessionStorageState/ChatSessionSto
 export interface CreateSessionOptions {
   readonly sessionId: string
   readonly timestamp: string
+  readonly title: string
 }
 
 export const createSession = async (session: CreateSessionOptions): Promise<void> => {
@@ -12,6 +13,7 @@ export const createSession = async (session: CreateSessionOptions): Promise<void
   await getChatSessionStorage().setSession({
     id: session.sessionId,
     messages: [],
-    title: '',
+    timestamp: session.timestamp || '',
+    title: session.title || '',
   })
 }
