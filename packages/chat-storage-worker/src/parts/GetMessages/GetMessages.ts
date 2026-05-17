@@ -9,17 +9,58 @@ import { getPartialMessage } from '../ChatSessionStorageState/ChatSessionStorage
 import { openDatabase } from '../OpenDatabase/OpenDatabase.ts'
 
 const isMessageEvent = (event: any): boolean => {
-  return event.type === 'chat-message-added'
+  return event.type === 'chat-message-added' || event.type === 'chat-message-updated' || event.type === 'chat-session-messages-replaced'
 }
 
-const toMessage = (event: any): any => {
-  if (event.type === 'chat-message-added') {
-    return {
-      message: event.message,
-      timestamp: event.timestamp,
-      type: event.type,
+const toMessages = (events: readonly any[]): readonly ChatViewEvent[] => {
+  const messages: any[] = []
+  for (const event of events) {
+    if (event.type === 'chat-message-added') {
+      messages.push({
+        message: event.message,
+        timestamp: event.timestamp,
+        type: 'chat-message-added',
+      })
+      continue
+    }
+    if (event.type === 'chat-message-updated') {
+      const existingIndex = messages.findIndex((messageEvent) => messageEvent.message?.id === event.messageId)
+      if (existingIndex === -1) {
+        continue
+      }
+      messages[existingIndex] = {
+        message: {
+          ...messages[existingIndex].message,
+          ...(event.inProgress === undefined
+            ? {}
+            : {
+                inProgress: event.inProgress,
+              }),
+          text: event.text,
+          time: event.time,
+          ...(event.toolCalls === undefined
+            ? {}
+            : {
+                toolCalls: event.toolCalls,
+              }),
+        },
+        timestamp: event.timestamp,
+        type: 'chat-message-added',
+      }
+      continue
+    }
+    if (event.type === 'chat-session-messages-replaced') {
+      messages.length = 0
+      messages.push(
+        ...event.messages.map((message: any) => ({
+          message,
+          timestamp: event.timestamp,
+          type: 'chat-message-added',
+        })),
+      )
     }
   }
+  return messages as readonly ChatViewEvent[]
 }
 
 const mergePartialMessage = (messages: readonly any[], sessionId: string): readonly ChatViewEvent[] => {
@@ -56,7 +97,7 @@ const getPersistedMessages = async (sessionId: string): Promise<readonly ChatVie
     const index = store.index(chatSessionStorageSessionIdIndexName)
     const events = await index.getAll(sessionId)
     const messageEvents = events.filter(isMessageEvent)
-    return messageEvents.map(toMessage)
+    return toMessages(messageEvents)
   } catch (error) {
     if (isMissingStoreError(error)) {
       return []

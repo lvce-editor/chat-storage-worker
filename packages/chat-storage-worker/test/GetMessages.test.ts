@@ -168,3 +168,75 @@ test('getMessages returns the active partial assistant message for the session',
     database.close()
   }
 })
+
+test('getMessages replays tool call updates onto the stored message', async () => {
+  await deleteDatabase(chatSessionStorageDatabaseName)
+  const database = await openDB(chatSessionStorageDatabaseName, chatSessionStorageDatabaseVersion, {
+    upgrade: upgradeDatabase,
+  })
+  const sessionId = 'session-tools'
+  try {
+    await database.add(chatSessionStorageEventStoreName, {
+      message: {
+        id: 'm1',
+        role: 'assistant',
+        text: 'Let me check.',
+        time: '2026-01-01T00:00:01.000Z',
+        toolCalls: [
+          {
+            arguments: '{"uri":"file:///workspace/notes.txt"}',
+            id: 'call_1',
+            name: 'read_file',
+          },
+        ],
+      },
+      sessionId,
+      timestamp: '2026-01-01T00:00:01.000Z',
+      type: 'chat-message-added',
+    })
+    await database.add(chatSessionStorageEventStoreName, {
+      inProgress: false,
+      messageId: 'm1',
+      sessionId,
+      text: 'Let me check.',
+      time: '2026-01-01T00:00:01.000Z',
+      timestamp: '2026-01-01T00:00:02.000Z',
+      toolCalls: [
+        {
+          arguments: '{"uri":"file:///workspace/notes.txt"}',
+          id: 'call_1',
+          name: 'read_file',
+          result: '{"content":"alpha"}',
+          status: 'success',
+        },
+      ],
+      type: 'chat-message-updated',
+    })
+
+    const result = await getMessages(sessionId)
+
+    expect(result).toEqual([
+      {
+        message: {
+          id: 'm1',
+          role: 'assistant',
+          text: 'Let me check.',
+          time: '2026-01-01T00:00:01.000Z',
+          toolCalls: [
+            {
+              arguments: '{"uri":"file:///workspace/notes.txt"}',
+              id: 'call_1',
+              name: 'read_file',
+              result: '{"content":"alpha"}',
+              status: 'success',
+            },
+          ],
+        },
+        timestamp: '2026-01-01T00:00:02.000Z',
+        type: 'chat-message-added',
+      },
+    ])
+  } finally {
+    database.close()
+  }
+})
