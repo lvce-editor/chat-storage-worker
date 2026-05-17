@@ -219,6 +219,7 @@ test('getMessages replays tool call updates onto the stored message', async () =
       {
         message: {
           id: 'm1',
+          inProgress: false,
           role: 'assistant',
           text: 'Let me check.',
           time: '2026-01-01T00:00:01.000Z',
