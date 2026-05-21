@@ -37,12 +37,12 @@ beforeEach(async () => {
 const createMockRpc = (): any => {
   const invocations: Array<readonly [string, number, string]> = []
   return {
-    dispose: jest.fn(async () => { }),
+    dispose: jest.fn(async () => {}),
     invocations,
     invoke: jest.fn(async (method: string, uid: number, sessionId: string) => {
       invocations.push([method, uid, sessionId])
     }),
-    invokeAndTransfer: jest.fn(async () => { }),
+    invokeAndTransfer: jest.fn(async () => {}),
     send: jest.fn(),
   }
 }
@@ -287,13 +287,13 @@ test('listChatSessions returns summaries without messages and keeps projectId', 
   ]
 
   chatSessionStorage.setChatSessionStorage({
-    appendEvent: jest.fn(async () => { }),
-    clear: jest.fn(async () => { }),
-    deleteSession: jest.fn(async () => { }),
+    appendEvent: jest.fn(async () => {}),
+    clear: jest.fn(async () => {}),
+    deleteSession: jest.fn(async () => {}),
     getEvents: jest.fn(async () => []),
     getSession: jest.fn(async () => undefined),
     listSessions: jest.fn(async () => storedSessions),
-    setSession: jest.fn(async () => { }),
+    setSession: jest.fn(async () => {}),
   })
 
   const result = await chatSessionStorage.listChatSessions()
