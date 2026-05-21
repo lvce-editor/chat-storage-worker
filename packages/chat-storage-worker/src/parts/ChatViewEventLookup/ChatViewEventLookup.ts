@@ -140,9 +140,13 @@ const getStatus = (event: any): number => {
 
   }
   if (event.type === 'tool-calls-finished' && event.toolCallResults && event.toolCallResults[0].type === 'error') {
-    if (event.toolCallResults[0].error && typeof event.toolCallResults[0].error.startsWith('Invalid argument')) {
+    if (event.toolCallResults[0].error && event.toolCallResults[0].error.startsWith('Error: File not found')) {
+      return 404
+    }
+    if (event.toolCallResults[0].error && event.toolCallResults[0].error.startsWith('Invalid argument')) {
       return 400
     }
+    return 500
   }
   return 200
 }
