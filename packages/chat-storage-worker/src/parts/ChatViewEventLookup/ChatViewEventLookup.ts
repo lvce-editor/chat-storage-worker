@@ -14,8 +14,8 @@ export interface ChatViewEventSummary {
   readonly eventId: number
   readonly requestId?: string
   readonly size?: number | undefined
-  readonly status?: number | undefined
   readonly startTime?: number | string
+  readonly status?: number | undefined
   readonly timestamp?: number | string
   readonly type: string
 }
@@ -135,9 +135,8 @@ const collapseToolExecutionEvents = (events: readonly RawChatViewEvent[]): reado
 }
 
 const getStatus = (event: any): number => {
-  if (event.statusCode && typeof event.statusCode === 'number') {
+  if (typeof event.statusCode === 'number') {
     return event.statusCode
-
   }
   if (event.type === 'tool-calls-finished' && event.toolCallResults && event.toolCallResults[0].type === 'error') {
     if (event.toolCallResults[0].error && event.toolCallResults[0].error.startsWith('Error: File not found')) {
@@ -151,7 +150,6 @@ const getStatus = (event: any): number => {
   return 200
 }
 
-
 const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): ChatViewEventSummary => {
   const startTime = getStartTime(event)
   const endTime = getEndTime(event)
@@ -164,9 +162,9 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
     ...(typeof requestId === 'string' ? { requestId } : {}),
     ...(typeof size === 'number' ? { size } : {}),
     ...(startTime === undefined ? {} : { startTime }),
+    status: getStatus(event),
     ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
     type: event.type,
-    status: getStatus(event)
   }
 }
 
