@@ -147,6 +147,7 @@ const getStatus = (event: any): number => {
   return 200
 }
 
+
 const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): ChatViewEventSummary => {
   const startTime = getStartTime(event)
   const endTime = getEndTime(event)
