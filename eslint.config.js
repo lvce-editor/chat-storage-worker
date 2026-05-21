@@ -11,6 +11,7 @@ export default [
   {
     rules: {
       'sonarjs/cognitive-complexity': 'off',
+      'unicorn/empty-brace-spaces': 'off',
     },
   },
 ]
