@@ -135,7 +135,6 @@ const getStatus = (event: any): number => {
 }
 
 const getSubType = (event: any): string => {
-  console.log({ event })
   if (typeof event.name === 'string') {
     return event.name
   }
