@@ -16,9 +16,9 @@ export interface ChatViewEventSummary {
   readonly size?: number | undefined
   readonly startTime?: number | string
   readonly status?: number | undefined
+  readonly subType: string
   readonly timestamp?: number | string
   readonly type: string
-  readonly subType: string
 }
 
 type RawChatViewEvent = ChatViewEventInfo & {
@@ -156,8 +156,8 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
     ...(startTime === undefined ? {} : { startTime }),
     status: getStatus(event),
     ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
-    type: event.type,
     subType,
+    type: event.type,
   }
 }
 
