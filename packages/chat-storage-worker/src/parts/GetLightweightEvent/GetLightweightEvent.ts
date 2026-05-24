@@ -4,19 +4,35 @@ import { getEndTime } from '../GetEndTime/GetEndTime.ts'
 import { getStartTime } from '../GetStartTime/GetStartTime.ts'
 import { isTimeValue } from '../IsTimeValue/IsTimeValue.ts'
 
+const getTextSize = (value: unknown): number => {
+  try {
+    return JSON.stringify(value).length
+  } catch {
+    return 0
+  }
+}
+
 export const getSize = (event: ChatViewEventSimple): number | undefined => {
   if (typeof event.size === 'number') {
     return event.size
   }
+  // TODO maybe flatten tool call event so that
+  // its just event.value, similar to how
+  // it is for network events
+  if (
+    event &&
+    'toolCallResult' in event &&
+    typeof event.toolCallResult === 'object' &&
+    event.toolCallResult &&
+    'value' in event.toolCallResult &&
+    event.toolCallResult.value
+  ) {
+    return getTextSize(event.toolCallResult.value)
+  }
   if (!('value' in event)) {
     return undefined
   }
-  try {
-    const json = JSON.stringify(event.value)
-    return typeof json === 'string' ? json.length : undefined
-  } catch {
-    return undefined
-  }
+  return getTextSize(event.value)
 }
 
 export const getLightweightEvent = (event: ChatViewEventSimple, fallbackEventId: number): ChatViewEventSimple => {
