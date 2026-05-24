@@ -13,7 +13,7 @@ const getTextSize = (value: unknown): number => {
 }
 
 export const getSize = (event: ChatViewEventSimple): number | undefined => {
-  if (typeof event.size === 'number') {
+  if (typeof event.size === 'number' && event.size > 0) {
     return event.size
   }
   // TODO maybe flatten tool call event so that
