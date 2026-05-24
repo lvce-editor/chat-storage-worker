@@ -152,8 +152,8 @@ const getStatus = (event: any): number => {
 }
 
 const getSubType = (event: any): string => {
-  if (typeof event.subType === 'string') {
-    return event.subType
+  if (typeof event.name === 'string') {
+    return event.name
   }
   return ''
 }
