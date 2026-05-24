@@ -16,6 +16,7 @@ export interface ChatViewEventSummary {
   readonly size?: number | undefined
   readonly startTime?: number | string
   readonly status?: number | undefined
+  readonly subType: string
   readonly timestamp?: number | string
   readonly type: string
 }
@@ -117,23 +118,6 @@ const withEventIds = (events: readonly ChatViewEvent[]): readonly RawChatViewEve
   })
 }
 
-const collapseToolExecutionEvents = (events: readonly RawChatViewEvent[]): readonly RawChatViewEvent[] => {
-  const collapsedEvents: RawChatViewEvent[] = []
-  for (let i = 0; i < events.length; i += 1) {
-    const event = events[i]
-    if (event.type === startedEventType) {
-      const nextEvent = events[i + 1]
-      if (nextEvent && nextEvent.type === finishedEventType && isMatchingToolExecutionPair(event, nextEvent)) {
-        collapsedEvents.push(mergeToolExecutionEvents(event, nextEvent))
-        i += 1
-        continue
-      }
-    }
-    collapsedEvents.push(event)
-  }
-  return collapsedEvents
-}
-
 const getStatus = (event: any): number => {
   if (typeof event.statusCode === 'number') {
     return event.statusCode
@@ -150,11 +134,19 @@ const getStatus = (event: any): number => {
   return 200
 }
 
+const getSubType = (event: any): string => {
+  if (typeof event.name === 'string') {
+    return event.name
+  }
+  return event.type || ''
+}
+
 const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): ChatViewEventSummary => {
   const startTime = getStartTime(event)
   const endTime = getEndTime(event)
   const { requestId, timestamp } = event
   const size = getSize(event)
+  const subType = getSubType(event)
   return {
     duration: getDuration(event),
     ...(endTime === undefined ? {} : { endTime }),
@@ -164,13 +156,14 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
     ...(startTime === undefined ? {} : { startTime }),
     status: getStatus(event),
     ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
+    subType,
     type: event.type,
   }
 }
 
 export const listChatViewEventSummaries = (events: readonly ChatViewEvent[]): readonly ChatViewEventSummary[] => {
   const eventsWithIds = withEventIds(filterDebugChatViewEvents(events))
-  return collapseToolExecutionEvents(eventsWithIds).map((event, index) => toLightweightEvent(event, index + 1))
+  return eventsWithIds.map((event, index) => toLightweightEvent(event, index + 1))
 }
 
 export const loadSelectedChatViewEvent = (events: readonly ChatViewEvent[], eventId: number, summaryType: string): ChatViewEventInfo | null => {
