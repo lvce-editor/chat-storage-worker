@@ -118,23 +118,6 @@ const withEventIds = (events: readonly ChatViewEvent[]): readonly RawChatViewEve
   })
 }
 
-const collapseToolExecutionEvents = (events: readonly RawChatViewEvent[]): readonly RawChatViewEvent[] => {
-  const collapsedEvents: RawChatViewEvent[] = []
-  for (let i = 0; i < events.length; i += 1) {
-    const event = events[i]
-    if (event.type === startedEventType) {
-      const nextEvent = events[i + 1]
-      if (nextEvent && nextEvent.type === finishedEventType && isMatchingToolExecutionPair(event, nextEvent)) {
-        collapsedEvents.push(mergeToolExecutionEvents(event, nextEvent))
-        i += 1
-        continue
-      }
-    }
-    collapsedEvents.push(event)
-  }
-  return collapsedEvents
-}
-
 const getStatus = (event: any): number => {
   if (typeof event.statusCode === 'number') {
     return event.statusCode
@@ -152,6 +135,7 @@ const getStatus = (event: any): number => {
 }
 
 const getSubType = (event: any): string => {
+  console.log({ event })
   if (typeof event.name === 'string') {
     return event.name
   }
@@ -179,7 +163,7 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
 
 export const listChatViewEventSummaries = (events: readonly ChatViewEvent[]): readonly ChatViewEventSummary[] => {
   const eventsWithIds = withEventIds(filterDebugChatViewEvents(events))
-  return collapseToolExecutionEvents(eventsWithIds).map((event, index) => toLightweightEvent(event, index + 1))
+  return eventsWithIds.map((event, index) => toLightweightEvent(event, index + 1))
 }
 
 export const loadSelectedChatViewEvent = (events: readonly ChatViewEvent[], eventId: number, summaryType: string): ChatViewEventInfo | null => {
