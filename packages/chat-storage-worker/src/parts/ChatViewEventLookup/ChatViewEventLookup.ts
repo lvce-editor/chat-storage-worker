@@ -138,7 +138,7 @@ const getSubType = (event: any): string => {
   if (typeof event.name === 'string') {
     return event.name
   }
-  return ''
+  return event.type || ''
 }
 
 const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): ChatViewEventSummary => {
@@ -146,6 +146,7 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
   const endTime = getEndTime(event)
   const { requestId, timestamp } = event
   const size = getSize(event)
+  const subType = getSubType(event)
   return {
     duration: getDuration(event),
     ...(endTime === undefined ? {} : { endTime }),
@@ -156,7 +157,7 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
     status: getStatus(event),
     ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
     type: event.type,
-    subType: getSubType(event),
+    subType,
   }
 }
 
