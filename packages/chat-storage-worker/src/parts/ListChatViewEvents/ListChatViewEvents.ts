@@ -5,8 +5,9 @@ import { listChatViewEventSummaries } from '../ChatViewEventLookup/ChatViewEvent
 export const listChatViewEvents = async (sessionId: string): Promise<ListChatViewEventsResult> => {
   try {
     const events = await getChatSessionStorage().getEvents(sessionId)
+    const normalized = listChatViewEventSummaries(events)
     return {
-      events: listChatViewEventSummaries(events),
+      events: normalized,
       type: 'success',
     }
   } catch (error) {
