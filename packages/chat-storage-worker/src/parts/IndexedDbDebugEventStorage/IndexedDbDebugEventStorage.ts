@@ -96,10 +96,7 @@ export class IndexedDbDebugEventStorage implements DebugEventStorage {
     }
     const writeTransaction = database.transaction(this.state.eventStoreName, 'readwrite')
     const writeEventStore = writeTransaction.objectStore(this.state.eventStoreName)
-    const deletePromises = []
-    for (const key of keys) {
-      deletePromises.push(writeEventStore.delete(key))
-    }
+    const deletePromises = Array.from(keys, (key) => writeEventStore.delete(key))
     await Promise.all([...deletePromises, writeTransaction.done])
   }
 

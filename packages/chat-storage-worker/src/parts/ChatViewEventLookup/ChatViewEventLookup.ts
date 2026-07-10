@@ -102,9 +102,9 @@ const mergeToolExecutionEvents = (startedEvent: RawChatViewEvent, finishedEvent:
   return {
     ...startedEvent,
     ...finishedEvent,
-    ...(ended === undefined ? {} : { ended }),
-    ...(typeof startedEvent.eventId === 'number' ? { eventId: startedEvent.eventId } : {}),
-    ...(started === undefined ? {} : { started }),
+    ...(ended !== undefined && { ended }),
+    ...(typeof startedEvent.eventId === 'number' && { eventId: startedEvent.eventId }),
+    ...(started !== undefined && { started }),
     type: mergedEventType,
   }
 }
@@ -149,13 +149,13 @@ const toLightweightEvent = (event: RawChatViewEvent, fallbackEventId: number): C
   const subType = getSubType(event)
   return {
     duration: getDuration(event),
-    ...(endTime === undefined ? {} : { endTime }),
+    ...(endTime !== undefined && { endTime }),
     eventId: typeof event.eventId === 'number' ? event.eventId : fallbackEventId,
-    ...(typeof requestId === 'string' ? { requestId } : {}),
-    ...(typeof size === 'number' ? { size } : {}),
-    ...(startTime === undefined ? {} : { startTime }),
+    ...(typeof requestId === 'string' && { requestId }),
+    ...(typeof size === 'number' && { size }),
+    ...(startTime !== undefined && { startTime }),
     status: getStatus(event),
-    ...(typeof timestamp === 'number' || typeof timestamp === 'string' ? { timestamp } : {}),
+    ...((typeof timestamp === 'number' || typeof timestamp === 'string') && { timestamp }),
     subType,
     type: event.type,
   }

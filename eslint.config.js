@@ -14,4 +14,17 @@ export default [
       'unicorn/empty-brace-spaces': 'off',
     },
   },
+  {
+    files: ['packages/chat-storage-worker/{src,test}/**/*.ts'],
+    rules: {
+      'jest/no-disabled-tests': 'off',
+      'no-restricted-syntax': 'off',
+      'unicorn/consistent-class-member-order': 'off',
+      'unicorn/no-global-object-property-assignment': 'off',
+      'unicorn/no-top-level-assignment-in-function': 'off',
+      'unicorn/prefer-else-if': 'off',
+      'unicorn/prefer-includes-over-repeated-comparisons': 'off',
+      'unicorn/prefer-iterator-to-array': 'off',
+    },
+  },
 ]
