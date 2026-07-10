@@ -10,9 +10,9 @@ export const mergeToolExecutionEvents = (startedEvent: ChatViewEventSimple, fini
   const mergedEvent: ChatViewEventSimple = {
     ...startedEvent,
     ...finishedEvent,
-    ...(ended === undefined ? {} : { ended }),
-    ...(eventId === undefined ? {} : { eventId }),
-    ...(started === undefined ? {} : { started }),
+    ...(ended !== undefined && { ended }),
+    ...(eventId !== undefined && { eventId }),
+    ...(started !== undefined && { started }),
     type: mergedEventType,
   }
   return mergedEvent

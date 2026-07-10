@@ -42,12 +42,12 @@ export const getLightweightEvent = (event: ChatViewEventSimple, fallbackEventId:
   const size = getSize(event)
   return {
     duration: getDuration(event),
-    ...(isTimeValue(endTime) ? { endTime } : {}),
+    ...(isTimeValue(endTime) && { endTime }),
     eventId: typeof event.eventId === 'number' ? event.eventId : fallbackEventId,
-    ...(typeof requestId === 'string' ? { requestId } : {}),
-    ...(typeof size === 'number' ? { size } : {}),
-    ...(isTimeValue(startTime) ? { startTime } : {}),
-    ...(isTimeValue(timestamp) ? { timestamp } : {}),
+    ...(typeof requestId === 'string' && { requestId }),
+    ...(typeof size === 'number' && { size }),
+    ...(isTimeValue(startTime) && { startTime }),
+    ...(isTimeValue(timestamp) && { timestamp }),
     type: event.type,
   }
 }

@@ -40,9 +40,9 @@ const mergeToolExecutionEvents = (startedEvent: ChatViewEventSimple, finishedEve
   return {
     ...startedEvent,
     ...finishedEvent,
-    ...(ended === undefined ? {} : { ended }),
+    ...(ended !== undefined && { ended }),
     eventId,
-    ...(started === undefined ? {} : { started }),
+    ...(started !== undefined && { started }),
     type: 'tool-execution',
   }
 }
