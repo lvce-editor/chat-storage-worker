@@ -31,18 +31,14 @@ const toMessages = (events: readonly any[]): readonly ChatViewEvent[] => {
       messages[existingIndex] = {
         message: {
           ...messages[existingIndex].message,
-          ...(event.inProgress === undefined
-            ? {}
-            : {
-                inProgress: event.inProgress,
-              }),
+          ...(event.inProgress !== undefined && {
+            inProgress: event.inProgress,
+          }),
           text: event.text,
           time: event.time,
-          ...(event.toolCalls === undefined
-            ? {}
-            : {
-                toolCalls: event.toolCalls,
-              }),
+          ...(event.toolCalls !== undefined && {
+            toolCalls: event.toolCalls,
+          }),
         },
         timestamp: event.timestamp,
         type: 'chat-message-added',

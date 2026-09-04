@@ -126,18 +126,14 @@ const getUpdatedMessage = (
   }
   return {
     ...message,
-    ...(event.inProgress === undefined
-      ? {}
-      : {
-          inProgress: event.inProgress,
-        }),
+    ...(event.inProgress !== undefined && {
+      inProgress: event.inProgress,
+    }),
     text: event.text,
     time: event.time,
-    ...(event.toolCalls === undefined
-      ? {}
-      : {
-          toolCalls: event.toolCalls,
-        }),
+    ...(event.toolCalls !== undefined && {
+      toolCalls: event.toolCalls,
+    }),
   }
 }
 
@@ -241,10 +237,7 @@ export class InMemoryChatSessionStorage implements ChatSessionStorage {
   }
 
   async listSessions(): Promise<readonly ChatSession[]> {
-    const ids = new Set<string>()
-    for (const id of this.summaries.keys()) {
-      ids.add(id)
-    }
+    const ids = new Set<string>(this.summaries.keys())
     for (const event of this.events) {
       ids.add(event.sessionId)
     }
